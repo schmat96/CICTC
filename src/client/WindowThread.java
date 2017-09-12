@@ -1,4 +1,4 @@
-package client;
+					package client;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -53,6 +53,7 @@ public class WindowThread {
 	private JPanel JPANEL_Ping = new JPanel();
 	private JPanel JPANEL_Input = new JPanel();
 	private JPanel JPANEL_Show = new JPanel();
+	private JPanel JPANEL_Lobby = new JPanel();
 	
 	private JPanel JPANEL_MAIN = new JPanel();
 	
@@ -88,31 +89,48 @@ public class WindowThread {
 		//frame.setLayout();
 		GridBagConstraints constraints = new GridBagConstraints();
 		
-		GridLayout gl = new GridLayout(1,10);
 		
-		JPANEL_MAIN.add(JPANEL_Show, gl);   
+		JPANEL_MAIN.setLayout(new GridBagLayout());
 		
 		//JPANEL_Show.setLayout(new GridLayout(1,1));
 		//JPANEL_Input.setLayout(new GridLayout(1,1));
+		JPANEL_Lobby.setLayout(new BoxLayout(JPANEL_Lobby, BoxLayout.PAGE_AXIS));
     
-	    constraints.weighty = 0;
-	    constraints.gridheight = 8;
-	    constraints.gridwidth = 1;
-	    constraints.gridy = 0;
-	    constraints.gridx = 0;
-	    JPANEL_MAIN.add(JPANEL_Show, constraints);     
-
-	    constraints.weighty = 0;
-	    constraints.gridheight = 2;
-	    constraints.gridwidth = 1;
-	    constraints.gridy = 8;
-	    constraints.gridx = 0;
-	    JPANEL_MAIN.add(JPANEL_Input, constraints);
+	   
 		
 		Border blackline = BorderFactory.createLineBorder(Color.black);
 		
 		JPANEL_Input.setBorder(blackline);
 		JPANEL_Show.setBorder(blackline);
+		JPANEL_Lobby.setBorder(blackline);
+		
+		constraints.fill = GridBagConstraints.BOTH;
+		    
+		constraints.weightx = 1;
+		constraints.weighty = 1;
+		
+		    constraints.gridheight = 8;
+		    constraints.gridwidth = 9;
+		    constraints.gridy = 0;
+		    constraints.gridx = 1;
+		    constraints.anchor = GridBagConstraints.NORTHWEST;
+		    JPANEL_MAIN.add(JPANEL_Show, constraints);     
+
+		    constraints.weightx = 1;
+			constraints.weighty = 1;
+		    constraints.gridheight = 1;
+		    constraints.gridwidth = 10;
+		    constraints.gridy = 8;
+		    constraints.gridx = 0;
+		    JPANEL_MAIN.add(JPANEL_Input, constraints);
+		    
+		    constraints.weightx = 0;
+			constraints.weighty = 1;
+		    constraints.gridheight = 8;
+		    constraints.gridwidth = 1;
+		    constraints.gridy = 0;
+		    constraints.gridx = 0;
+		    JPANEL_MAIN.add(JPANEL_Lobby, constraints);   
 		
 		
 		JTEXTFIELD_Input.setText("Eine normale Nachricht zum nicht verr�ckt werden");
@@ -124,20 +142,20 @@ public class WindowThread {
 		dataLobby = new String[NUMBER_ROWS];
 		String s = "";
 		for (int i = 0;i<NUMBER_ROWS;i++) {
-			s = s + "<br>sasdadsdas dsasdasdasdas sdaadsdsadsddasdsaaddsa sdaasdadsadsads";
+			s = s + "<br>sasdadsdas dsasdasdasdas sdaadsdsadsddasdsaaddsa";
 		}
 		
 		JEDITORPANE_Chat.setText(s);
 		lobbyList = new JList(dataLobby); 
 		JEDITORPANE_Chat.setPreferredSize(JEDITORPANE_Chat.getPreferredSize());
-		lobbyList.setPreferredSize(new Dimension(100, JEDITORPANE_Chat.getPreferredSize().height));
+		lobbyList.setPreferredSize(new Dimension(100, JEDITORPANE_Chat.getPreferredSize().height-100));
 		JEDITORPANE_Chat.setText("");
 		
 		String[] dataUsers = new String[NUMBER_ROWS];
 		dataUsers[1] = "Mathias";
 		dataUsers[0] = "Kevin";
 		userList = new JList(dataUsers);
-		userList.setPreferredSize(new Dimension(100, JEDITORPANE_Chat.getPreferredSize().height));
+		userList.setPreferredSize(new Dimension(100, JEDITORPANE_Chat.getPreferredSize().height-100));
 
 		
 		lobbyList.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
@@ -153,7 +171,9 @@ public class WindowThread {
 	      
 		  editorScrollPane = new JScrollPane(JEDITORPANE_Chat);
 		  editorScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-	      JButton jb = new JButton("send");
+		  //editorScrollPane.setPreferredSize(JPANEL_Show.getPreferredSize());
+		  
+		  JButton jb = new JButton("send");
 	      jb.setPreferredSize(new Dimension(80,50));
 	      jb.setToolTipText("useful commands: /coins ; /popup [message] ; /w [name] ; /random [bet]");
 	      jb.addActionListener(new ActionListener()
@@ -165,7 +185,7 @@ public class WindowThread {
 	      });
 	      
 	      JButton addLobbyButton = new JButton("add Lobby");
-	      addLobbyButton.setPreferredSize(new Dimension(80,50));
+	      addLobbyButton.setMinimumSize(new Dimension(80,50));
 	      addLobbyButton.setToolTipText("Add a new Lobby!");
 	      addLobbyButton.addActionListener(new ActionListener()
 	      {
@@ -177,18 +197,19 @@ public class WindowThread {
 	      
 	      JPANEL_Input.add(JTEXTFIELD_Input);
 	      JPANEL_Input.add(jb);
-	      //JPANEL_Input.setPreferredSize(JPANEL_Input.getPreferredSize());
+	      JPANEL_Input.setPreferredSize(JPANEL_Input.getPreferredSize());
 	      JPANEL_Ping.add(JLabel_PingText);
-	      JPANEL_Show.add(listScroller);
-	      JPANEL_Show.add(tabpane);
-	      JPANEL_Show.add(addLobbyButton);
+	      JPANEL_Lobby.add(listScroller);
+	      JPANEL_Lobby.add(tabpane);
+	      JPANEL_Lobby.add(addLobbyButton);
 	      JPANEL_Show.add(editorScrollPane);
 	      
+	     
+		    
 	      	
 	    
 	    frame.add(JPANEL_MAIN);
 	    
-	    Color col = new Color(255, 204, 0);
 	    
 	    
 	    
