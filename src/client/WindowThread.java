@@ -7,6 +7,7 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.KeyEventDispatcher;
 import java.awt.KeyboardFocusManager;
@@ -17,6 +18,7 @@ import java.awt.event.KeyListener;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JEditorPane;
@@ -30,6 +32,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
+import javax.swing.border.Border;
 import javax.swing.text.html.HTML;
 
 import server.clientThread;
@@ -50,6 +53,8 @@ public class WindowThread {
 	private JPanel JPANEL_Ping = new JPanel();
 	private JPanel JPANEL_Input = new JPanel();
 	private JPanel JPANEL_Show = new JPanel();
+	
+	private JPanel JPANEL_MAIN = new JPanel();
 	
 	private JEditorPane JEDITORPANE_Chat = new JEditorPane();
 	
@@ -72,15 +77,43 @@ public class WindowThread {
 	
 	public WindowThread(Client c) {
 		
+		//JPANEL_MAIN.setLayout(new GridLayout(10,1,10,1));
+		
 		this.client = c;
 		
 		frame = new JFrame("CICTC Version" + VERSION);
+		frame.setSize(new Dimension(500,600));
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
-		frame.setLayout(new GridBagLayout());
+		//frame.setLayout();
 		GridBagConstraints constraints = new GridBagConstraints();
+		
+		GridLayout gl = new GridLayout(1,10);
+		
+		JPANEL_MAIN.add(JPANEL_Show, gl);   
+		
+		//JPANEL_Show.setLayout(new GridLayout(1,1));
+		//JPANEL_Input.setLayout(new GridLayout(1,1));
+    
+	    constraints.weighty = 0;
+	    constraints.gridheight = 8;
+	    constraints.gridwidth = 1;
+	    constraints.gridy = 0;
+	    constraints.gridx = 0;
+	    JPANEL_MAIN.add(JPANEL_Show, constraints);     
 
-
+	    constraints.weighty = 0;
+	    constraints.gridheight = 2;
+	    constraints.gridwidth = 1;
+	    constraints.gridy = 8;
+	    constraints.gridx = 0;
+	    JPANEL_MAIN.add(JPANEL_Input, constraints);
+		
+		Border blackline = BorderFactory.createLineBorder(Color.black);
+		
+		JPANEL_Input.setBorder(blackline);
+		JPANEL_Show.setBorder(blackline);
+		
 		
 		JTEXTFIELD_Input.setText("Eine normale Nachricht zum nicht verr�ckt werden");
 		JTEXTFIELD_Input.setPreferredSize(JTEXTFIELD_Input.getPreferredSize());
@@ -144,24 +177,16 @@ public class WindowThread {
 	      
 	      JPANEL_Input.add(JTEXTFIELD_Input);
 	      JPANEL_Input.add(jb);
-	      JPANEL_Input.setPreferredSize(JPANEL_Input.getPreferredSize());
+	      //JPANEL_Input.setPreferredSize(JPANEL_Input.getPreferredSize());
 	      JPANEL_Ping.add(JLabel_PingText);
 	      JPANEL_Show.add(listScroller);
 	      JPANEL_Show.add(tabpane);
 	      JPANEL_Show.add(addLobbyButton);
 	      JPANEL_Show.add(editorScrollPane);
-
-	    constraints.fill = GridBagConstraints.HORIZONTAL;
-	    constraints.gridx = 0;
-	    constraints.gridy = 1;
-	    constraints.insets = new Insets(0, 10, 0, 0);
-	    constraints.weightx = 1;
-	    frame.add(JPANEL_Show, constraints);
+	      
+	      	
 	    
-	    constraints.fill = GridBagConstraints.HORIZONTAL;
-	    constraints.gridx = 0;
-	    constraints.gridy = 4;
-	    frame.add(JPANEL_Input, constraints);
+	    frame.add(JPANEL_MAIN);
 	    
 	    Color col = new Color(255, 204, 0);
 	    
