@@ -15,11 +15,14 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Iterator;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
+import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JEditorPane;
 import javax.swing.JFrame;
@@ -42,13 +45,18 @@ public class WindowThread {
 	
 		
 
-	
+	private ArrayList<userList> userList = new ArrayList<userList>();
+	DefaultListModel<String> userListModel = new DefaultListModel<>();
+	private ArrayList<lobbyList> lobbyList = new ArrayList<lobbyList>();
+	DefaultListModel<String> lobbyListModel = new DefaultListModel<>();
 
 	private Client client;
 	
 	private static final String VERSION = "1.05";
 	
 	private static final int NUMBER_ROWS = 15;
+	private static int lastSelectedUser = 0;
+	private static int lastSelectedLobby = 0;
 	
 	private JPanel JPANEL_Ping = new JPanel();
 	private JPanel JPANEL_Input = new JPanel();
@@ -62,16 +70,15 @@ public class WindowThread {
 	private JTextField JTEXTFIELD_Input = new JTextField();
 	private JLabel JLabel_PingText = new JLabel();
 	
-	private JList lobbyList;
-	private JList userList;
+	private JList JList_lobbyList;
+	String[] dataUsers;
+	private JList JList_userList;
 	
 	private JScrollPane editorScrollPane;
-	
-	String[] dataLobby;
 	 
-	
-	private final String[] styleJT = {"<html>","</html>"};
 	private ArrayList<String> chatText = new ArrayList<String>();
+	
+	private JTabbedPane tabpane;
 	
 	JFrame frame = null;
 	
@@ -131,6 +138,7 @@ public class WindowThread {
 		    constraints.gridy = 0;
 		    constraints.gridx = 0;
 		    JPANEL_MAIN.add(JPANEL_Lobby, constraints);   
+		    
 		
 		
 		JTEXTFIELD_Input.setText("Eine normale Nachricht zum nicht verr�ckt werden");
@@ -139,33 +147,49 @@ public class WindowThread {
 	     
 		JEDITORPANE_Chat.setContentType("text/html");
 		
-		dataLobby = new String[NUMBER_ROWS];
+
 		String s = "";
 		for (int i = 0;i<NUMBER_ROWS;i++) {
 			s = s + "<br>sasdadsdas dsasdasdasdas sdaadsdsadsddasdsaaddsa";
 		}
 		
 		JEDITORPANE_Chat.setText(s);
-		lobbyList = new JList(dataLobby); 
+		JList_lobbyList = new JList(lobbyListModel); 
 		JEDITORPANE_Chat.setPreferredSize(JEDITORPANE_Chat.getPreferredSize());
-		lobbyList.setPreferredSize(new Dimension(100, JEDITORPANE_Chat.getPreferredSize().height-100));
+		JList_lobbyList.setPreferredSize(new Dimension(100, JEDITORPANE_Chat.getPreferredSize().height-100));
 		JEDITORPANE_Chat.setText("");
 		
-		String[] dataUsers = new String[NUMBER_ROWS];
-		dataUsers[1] = "Mathias";
-		dataUsers[0] = "Kevin";
-		userList = new JList(dataUsers);
-		userList.setPreferredSize(new Dimension(100, JEDITORPANE_Chat.getPreferredSize().height-100));
+		JList_userList = new JList(userListModel);
+		JList_userList.setPreferredSize(new Dimension(100, JEDITORPANE_Chat.getPreferredSize().height-100));
+		
+		JList_userList.addMouseListener(new MouseAdapter() {
+		    public void mouseClicked(MouseEvent evt) {
+		        JList list = (JList)evt.getSource();
+		        if (evt.getClickCount() == 2) {
 
+		            // Double-click detected
+		            int index = list.locationToIndex(evt.getPoint());
+		            lastSelectedUser = index;
+		            changeShowView(list.getSelectedValue());
+		        } else if (evt.getClickCount() == 3) {
+
+		            int index = list.locationToIndex(evt.getPoint());
+		            addUser("name", 3);
+		        }
+		    }
+		});
 		
-		lobbyList.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
-		lobbyList.setLayoutOrientation(JList.HORIZONTAL_WRAP);
-		lobbyList.setVisibleRowCount(-1);
-		JScrollPane listScroller = new JScrollPane(lobbyList);
+		JList_lobbyList.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
+		JList_lobbyList.setLayoutOrientation(JList.HORIZONTAL_WRAP);
+		JList_lobbyList.setVisibleRowCount(-1);
 		
-		JTabbedPane tabpane = new JTabbedPane(JTabbedPane.TOP,JTabbedPane.WRAP_TAB_LAYOUT );
-		tabpane.addTab("Lobby", lobbyList);
-		tabpane.addTab("Users", userList);
+		JScrollPane listScroller = new JScrollPane(JList_lobbyList);
+		
+		tabpane = new JTabbedPane(JTabbedPane.TOP,JTabbedPane.WRAP_TAB_LAYOUT );
+		tabpane.addTab("Lobby", JList_lobbyList);
+		tabpane.addTab("Users", JList_userList);
+		
+		this.addLobby("System", 0);
 		
 	      
 	      
@@ -223,6 +247,11 @@ public class WindowThread {
 		frame.setVisible(true);
 	}
 
+	protected void changeShowView(Object selectedValue) {
+		
+		
+	}
+
 	protected void addLobby() {
 		String name = "";
 		while (true) {
@@ -242,15 +271,15 @@ public class WindowThread {
 		} else {
 			if (JTEXTFIELD_Input.getText().equals("clean")) {
 				chatText = new ArrayList<String>(); 
-				this.receivedChatMessage("View cleaned up!");
+				this.receivedChatMessage("View cleaned up!", "System");
 				JTEXTFIELD_Input.setText("");
 			} else {
 				if (checkForHtml(JTEXTFIELD_Input.getText())) {
 				client.sendMessageToServer("CHAT "+JTEXTFIELD_Input.getText());
-	        	this.receivedChatMessage("You: "+JTEXTFIELD_Input.getText());
+	        	this.receivedChatMessage("You: "+JTEXTFIELD_Input.getText(), "System");
 	        	JTEXTFIELD_Input.setText("");
 				} else {
-					this.receivedChatMessage("<font color=\"red\">GRRRRRR! HTML Tags werden hier nicht gedulded!</font>");
+					this.receivedChatMessage("<font color=\"red\">GRRRRRR! HTML Tags werden hier nicht gedulded!</font>", "System");
 					JTEXTFIELD_Input.setText("");
 				}
 			}
@@ -260,22 +289,63 @@ public class WindowThread {
 		
 	}
 
-	public void receivedChatMessage(String message) {
-		
-		String hue = "";
-		chatText.add(message);
-		Iterator<String> userIterator = chatText.iterator();
+	public void receivedChatMessage(String message, String lobbyName) {
+		Iterator<lobbyList> userIterator = lobbyList.iterator();
 		while (userIterator.hasNext()) {
-			String user = userIterator.next();
-			hue = hue + "<br>" + user;
+			lobbyList user = userIterator.next();
+			if (user.getName().equals(lobbyName)) {
+				user.addText(message);
+				JList_lobbyList.setSelectedIndex(0);
+				JList_lobbyList.setSelectionBackground(Color.red);
+			} else {
+				System.out.println("was not able to resolve lobby");
+			}
 		}
-		JEDITORPANE_Chat.setText( hue );
-		JEDITORPANE_Chat.setContentType("text/html");
-		this.JEDITORPANE_Chat.validate();
-		scrollDown();
-
+		//ADD CALL ONLY IF TAB IS ON THAT LOBBY
+		reloadChatText();
 	}
 	
+	public void receivedWhisperMessage(String message, String name) {
+		Iterator<userList> userIterator = userList.iterator();
+		while (userIterator.hasNext()) {
+			userList user = userIterator.next();
+			if (user.getName() == name) {
+				user.addText(message);
+				
+			} else {
+				System.out.println("was not able to resolve user");
+			}
+		}
+		//ADD CALL ONLY IF TAB IS ON THAT USER
+		reloadChatText();
+	}
+
+	private void reloadChatText() {
+		String hue = "";
+		if (tabpane.getSelectedIndex()==1) {
+			String s = this.userListModel.getElementAt(lastSelectedUser);
+			Iterator<userList> userIterator = userList.iterator();
+			while (userIterator.hasNext()) {
+				userList user = userIterator.next();
+				if (user.getName().equalsIgnoreCase(s)) {
+					hue = user.getConversation();
+				}
+			}
+		} else {
+			String s = this.lobbyListModel.getElementAt(lastSelectedLobby);
+			Iterator<lobbyList> userIterator = lobbyList.iterator();
+			while (userIterator.hasNext()) {
+				lobbyList user = userIterator.next();
+				if (user.getName().equalsIgnoreCase(s)) {
+					hue = user.getConversation();
+				}
+			}
+		}
+		
+		JEDITORPANE_Chat.setText( hue );
+		this.JEDITORPANE_Chat.validate();
+		scrollDown();
+	}
 
 	public static Boolean checkForHtml(String html) {
 		if (html.matches("\\<.*?>")) {
@@ -341,13 +411,27 @@ public class WindowThread {
 
 		public void lobbyAdded(String string) {
 			this.receivedSystemMessage("Lobby added: "+string);
+			/*
 			for (int i = 0; i<dataLobby.length;i++) {
 				if (dataLobby[i].equals("") || dataLobby[i] == null) {
 					dataLobby[i] = string;
 					break;
 				}
 			}
+			*/
 			
+		}
+		
+		public void addUser(String name, int id) {
+			userListModel.addElement(name);
+			userList e = new userList(name, id);
+			this.userList.add(e);
+		}
+		
+		public void addLobby(String name, int id) {
+			lobbyListModel.addElement(name);
+			lobbyList e = new lobbyList(name, id);
+			this.lobbyList.add(e);
 		}
 		
 	
