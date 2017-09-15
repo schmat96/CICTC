@@ -53,6 +53,7 @@ public class Client {
 		  	this.sendMessageToServer("USERNAME " + username);
 		  	
 		  	//this.start();
+		  	//hooooooooooooooooooooooooooooooooooooooooooooooiiiiii
 		  	WT = new WindowThread(this);
 		  	
 		  	
