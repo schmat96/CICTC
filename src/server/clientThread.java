@@ -217,7 +217,7 @@ public class clientThread extends Thread {
 			e.printStackTrace();
 		}
 		
-	}
+	}//hoi
 	
 	  private boolean newCoin() {
 		if (System.currentTimeMillis() > COINS_MS + Coins_sys_ms) {
