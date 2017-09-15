@@ -63,29 +63,45 @@ public class clientThread extends Thread {
 
 		                	String[] input = line.split("\\s+");
 		                	switch (input[0]) {
+		                		case "SYSTEM":
+	                			server.sendInfos(this.client);
+	                			break;
 		                		case "USERNAME":           			
 		                			String username = this.server.checkUsername(input[1]);
 		                			this.client.setUsername(username);
 		                			this.sendMessage("USERNAME "+username);
+		                			server.messageToAllExcpectSender("SYSTEM ADDUSER " + username, username);
 		                			break;
 		                		case "PING":
 		                			server.messageToAll(line);
 		                			break;
 		                		case "LOBBY":
 		                			switch (input[1].replaceAll(" ", "")) {
-			                			case "ADD":   
+			                			case "ADD": 
 			                				try {
-		                					this.server.addLobby(input[2], this.client);
+			                					this.server.addLobby(input[2], this.client, input[3]);
+		                		
 			                				} catch (DoubleLobbyNameExcpection e) {
 			                					this.sendMessage("SYSTEM MESSAGE Diese Lobby ist schon vorhanden!");
 			                					return;
+			                				} catch (permissionExcpection e) {
+			                					this.sendMessage("SYSTEM MESSAGE Du hast keine Rechte um dies zu machen! Frage den Admin um eine Lobby zu erstellen");
+			                					return;
 			                				}
+			                				
 		                					break;
 		                				case "JOIN":   
-		                					this.server.addClientToLobby(input[2], this.client);
+		                					this.server.addClientToLobby(input[2], this.client, "");
 		                					break;
 		                				case "LEAVE":   
 		                					this.server.removeClientFromLobby(input[2], this.client);
+		                					break;
+		                				case "PERMISSION" :
+		                					if (this.server.LobbyPermission(input[2], input[3], this.getName())) {
+		                						this.sendMessage("LOBBY PERMISSION " + input[2]);
+		                					} else {
+			                					this.sendMessage("SYSTEM MESSAGE Das Passwort war leider falsch.");
+		                					}
 		                					break;
 		                				default:
 		                					break;
@@ -99,25 +115,30 @@ public class clientThread extends Thread {
 		                				case "/coins":   
 		                					this.sendMessage("SYSTEM MESSAGE Du hast "+this.client.getCoins() + " Coins!");
 		                					break;
-		                				case "/w":   
-		                					String st = "CHAT <p><font color=\"green\">" + this.client.getUsername()+" hat dir gefl�stert: :";
+		                				case "WHISPER":   
+		                					String st = "CHAT WHISPER " + this.client.getUsername() + " ";
 				                			for (int i = 3;i<input.length;i++) {
 				                				st = st + " " + input[i];
 				                			}
-				                			st = st + "</font></p>";
-				                			server.messageToSpecifiedExcpectSender(st, input[2]);
+				                			server.messageToSpecified(st, input[2]);
 		                					break;
 		                				case "/random":   
-		                					if (input.length >= 2) {
+		                					try {
 		                						this.random(input[2]);
-		                					} else {
+		                					} catch (Exception ArrayIndexOutOfBoundsException) {
 		                						this.sendMessage("SYSTEM MESSAGE Du musst noch etwas wetten!");
 		                						return;
-		                					}
-		                					
+		                					}		
+		                					break;
+		                				case "LOBBY":   
+		                					String mes = "CHAT LOBBY " + input[2] + " " +this.client.getUsername()+":";
+				                			for (int i = 3;i<input.length;i++) {
+				                				mes = mes + " " + input[i];
+				                			}
+				                			server.messageToAllExcpectSender(mes, this.client.getUsername());
 		                					break;
 		                				default:
-		                					String s = "CHAT " + this.client.getUsername()+" :";
+		                					String s = "CHAT LOBBY System " + this.client.getUsername()+" :";
 				                			for (int i = 1;i<input.length;i++) {
 				                				s = s + " " + input[i];
 				                			}
@@ -126,6 +147,7 @@ public class clientThread extends Thread {
 		                			}
 		                			
 		                			break;
+		            
 		                		default:
 		                			
 		                	}

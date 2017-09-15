@@ -18,6 +18,7 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
+import java.util.Hashtable;
 import java.util.Iterator;
 
 import javax.swing.BorderFactory;
@@ -30,11 +31,13 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPasswordField;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
+import javax.swing.SwingConstants;
 import javax.swing.border.Border;
 import javax.swing.text.html.HTML;
 
@@ -51,6 +54,8 @@ public class WindowThread {
 	DefaultListModel<String> lobbyListModel = new DefaultListModel<>();
 
 	private Client client;
+	
+	private static final Color RECEIVED_NEW_MESSAGE_BACKGROUND = new Color(204,255,153);
 	
 	private static final String VERSION = "1.05";
 	
@@ -92,6 +97,7 @@ public class WindowThread {
 		frame = new JFrame("CICTC Version" + VERSION);
 		frame.setSize(new Dimension(500,600));
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.setLocation(2000, 100);
 		
 		//frame.setLayout();
 		GridBagConstraints constraints = new GridBagConstraints();
@@ -159,6 +165,22 @@ public class WindowThread {
 		JList_lobbyList.setPreferredSize(new Dimension(100, JEDITORPANE_Chat.getPreferredSize().height-100));
 		JEDITORPANE_Chat.setText("");
 		
+		JList_lobbyList.addMouseListener(new MouseAdapter() {
+		    public void mouseClicked(MouseEvent evt) {
+		        JList list = (JList)evt.getSource();
+		        if (evt.getClickCount() == 2) {
+		        	
+		            // Double-click detected
+		            int index = list.locationToIndex(evt.getPoint());
+		            lastSelectedLobby = index;
+		            reloadChatText();
+		            changeShowView(list.getSelectedValue());
+		        } else if (evt.getClickCount() == 3) {
+
+		        }
+		    }
+		});
+		
 		JList_userList = new JList(userListModel);
 		JList_userList.setPreferredSize(new Dimension(100, JEDITORPANE_Chat.getPreferredSize().height-100));
 		
@@ -170,6 +192,7 @@ public class WindowThread {
 		            // Double-click detected
 		            int index = list.locationToIndex(evt.getPoint());
 		            lastSelectedUser = index;
+		            reloadChatText();
 		            changeShowView(list.getSelectedValue());
 		        } else if (evt.getClickCount() == 3) {
 
@@ -208,14 +231,14 @@ public class WindowThread {
 	        }
 	      });
 	      
-	      JButton addLobbyButton = new JButton("add Lobby");
+	      JButton addLobbyButton = new JButton("Wush Update");
 	      addLobbyButton.setMinimumSize(new Dimension(80,50));
-	      addLobbyButton.setToolTipText("Add a new Lobby!");
+	      addLobbyButton.setToolTipText("Wush Update");
 	      addLobbyButton.addActionListener(new ActionListener()
 	      {
 	        public void actionPerformed(ActionEvent e)
 	        {
-	        	addLobby(); 	
+	        	onLoad();
 	        }
 	      });
 	      
@@ -245,6 +268,12 @@ public class WindowThread {
 		frame.pack();
 		frame.setFocusable(true);
 		frame.setVisible(true);
+		
+		onLoad();
+	}
+
+	private void onLoad() {
+		client.sendMessageToServer("SYSTEM GETINFOS");
 	}
 
 	protected void changeShowView(Object selectedValue) {
@@ -253,15 +282,23 @@ public class WindowThread {
 	}
 
 	protected void addLobby() {
-		String name = "";
-		while (true) {
-			name = JOptionPane.showInputDialog(frame, "Name für die Lobby?");
-			if (name.length() < 15) {
-				break;
-			}
-		}
+		    JPanel panel = new JPanel(new BorderLayout(5, 5));
+
+		    JPanel label = new JPanel(new GridLayout(0, 1, 2, 2));
+		    label.add(new JLabel("Name", SwingConstants.RIGHT));
+		    label.add(new JLabel("Passwort", SwingConstants.RIGHT));
+		    panel.add(label, BorderLayout.WEST);
+
+		    JPanel controls = new JPanel(new GridLayout(0, 1, 2, 2));
+		    JTextField username = new JTextField();
+		    controls.add(username);
+		    JPasswordField password = new JPasswordField();
+		    controls.add(password);
+		    panel.add(controls, BorderLayout.CENTER);
+
+		    JOptionPane.showMessageDialog(frame, panel, "Add Lobby", JOptionPane.QUESTION_MESSAGE);
 		
-		client.sendMessageToServer("LOBBY ADD "+ name);
+		client.sendMessageToServer("LOBBY ADD "+ username.getText() + " " + new String(password.getPassword()));
 		
 		
 	}
@@ -275,8 +312,15 @@ public class WindowThread {
 				JTEXTFIELD_Input.setText("");
 			} else {
 				if (checkForHtml(JTEXTFIELD_Input.getText())) {
-				client.sendMessageToServer("CHAT "+JTEXTFIELD_Input.getText());
-	        	this.receivedChatMessage("You: "+JTEXTFIELD_Input.getText(), "System");
+					String currentSelectedItem = currentSelected();
+				
+				if (tabpane.getSelectedIndex()==1) {
+					client.sendMessageToServer("CHAT WHISPER " + currentSelectedItem+" "+JTEXTFIELD_Input.getText());
+					this.receivedWhisperMessage("You: " + JTEXTFIELD_Input.getText(), currentSelectedItem);
+				} else {
+					client.sendMessageToServer("CHAT LOBBY " + currentSelectedItem+" "+JTEXTFIELD_Input.getText());
+					this.receivedChatMessage("You: " + JTEXTFIELD_Input.getText(), currentSelectedItem);
+				}
 	        	JTEXTFIELD_Input.setText("");
 				} else {
 					this.receivedChatMessage("<font color=\"red\">GRRRRRR! HTML Tags werden hier nicht gedulded!</font>", "System");
@@ -289,41 +333,93 @@ public class WindowThread {
 		
 	}
 
+	private String currentSelected() {
+		String select = "";
+		if (tabpane.getSelectedIndex()==1) {
+			return this.userListModel.getElementAt(lastSelectedUser);
+		} else {
+			return this.lobbyListModel.getElementAt(lastSelectedLobby);
+		}
+		
+	}
+
 	public void receivedChatMessage(String message, String lobbyName) {
+		Boolean found = false;
 		Iterator<lobbyList> userIterator = lobbyList.iterator();
 		while (userIterator.hasNext()) {
-			lobbyList user = userIterator.next();
-			if (user.getName().equals(lobbyName)) {
-				user.addText(message);
-				JList_lobbyList.setSelectedIndex(0);
-				JList_lobbyList.setSelectionBackground(Color.red);
-			} else {
-				System.out.println("was not able to resolve lobby");
+			lobbyList lobby = userIterator.next();
+			if (lobby.getName().equalsIgnoreCase(lobbyName)) {
+				lobby.addText(message);
+				for (int i = 0; i<lobbyListModel.getSize();i++) {
+					try {
+					if (lobbyListModel.get(i).equalsIgnoreCase(lobbyName)) {
+						int indexBackUp = JList_lobbyList.getSelectedIndex();
+						JList_lobbyList.setSelectedIndex(i);
+						JList_lobbyList.setSelectionBackground(RECEIVED_NEW_MESSAGE_BACKGROUND);
+						JList_lobbyList.setSelectedIndex(indexBackUp);
+						} 
+					} catch (Exception e) {
+						System.out.println(e.getStackTrace());
+					}
+					
+					
+					
+					
+				}
+				
+				found = true;
 			}
+		}
+		
+		if (found == false) {
+			System.out.println("was not able to resolve lobby");
+			this.addLobby(lobbyName, 1);
+			this.receivedChatMessage(message, lobbyName);
+			
 		}
 		//ADD CALL ONLY IF TAB IS ON THAT LOBBY
 		reloadChatText();
 	}
 	
 	public void receivedWhisperMessage(String message, String name) {
+		Boolean found = false;
 		Iterator<userList> userIterator = userList.iterator();
 		while (userIterator.hasNext()) {
 			userList user = userIterator.next();
-			if (user.getName() == name) {
+			if (user.getName().equalsIgnoreCase(name.trim())) {
 				user.addText(message);
+				for (int i = 0; i<userListModel.getSize();i++) {
+					if (userListModel.get(i).equalsIgnoreCase(name)) {
+						int indexBackUp = JList_userList.getSelectedIndex();
+						JList_userList.setSelectedIndex(i);
+						JList_userList.setSelectionBackground(RECEIVED_NEW_MESSAGE_BACKGROUND);
+						JList_userList.setSelectedIndex(indexBackUp);
+					}
+				}
 				
-			} else {
-				System.out.println("was not able to resolve user");
+				found = true;
 			}
 		}
-		//ADD CALL ONLY IF TAB IS ON THAT USER
+		
+		if (found == false) {
+			System.out.println("was not able to resolve lobby");
+			this.addUser(name, 1);
+			this.receivedChatMessage(message, name);
+			
+		}
+		//ADD CALL ONLY IF TAB IS ON THAT LOBBY
 		reloadChatText();
 	}
 
 	private void reloadChatText() {
 		String hue = "";
 		if (tabpane.getSelectedIndex()==1) {
-			String s = this.userListModel.getElementAt(lastSelectedUser);
+			String s = "";
+			try {
+			s = this.userListModel.getElementAt(lastSelectedUser);
+			} catch (Exception e) {
+				return;
+			}
 			Iterator<userList> userIterator = userList.iterator();
 			while (userIterator.hasNext()) {
 				userList user = userIterator.next();
@@ -332,12 +428,21 @@ public class WindowThread {
 				}
 			}
 		} else {
-			String s = this.lobbyListModel.getElementAt(lastSelectedLobby);
+			String s = "";
+			try {
+			s = this.lobbyListModel.getElementAt(lastSelectedLobby);
+			} catch (Exception e) {
+				return;
+			}
 			Iterator<lobbyList> userIterator = lobbyList.iterator();
 			while (userIterator.hasNext()) {
-				lobbyList user = userIterator.next();
-				if (user.getName().equalsIgnoreCase(s)) {
-					hue = user.getConversation();
+				lobbyList lobby = userIterator.next();
+				if (lobby.getName().equalsIgnoreCase(s)) {
+					if (lobby.getPermission()) {
+					hue = lobby.getConversation();
+					} else {
+						askServerForPermission(lobby);
+					}
 				}
 			}
 		}
@@ -345,6 +450,20 @@ public class WindowThread {
 		JEDITORPANE_Chat.setText( hue );
 		this.JEDITORPANE_Chat.validate();
 		scrollDown();
+	}
+
+	private void askServerForPermission(client.lobbyList lobby) {
+		
+		JPanel panel = new JPanel(new BorderLayout(5, 5));
+	    JPanel label = new JPanel(new GridLayout(0, 1, 2, 2));
+	    label.add(new JLabel("Password", SwingConstants.RIGHT));
+	    panel.add(label, BorderLayout.WEST);
+	    JPanel controls = new JPanel(new GridLayout(0, 1, 2, 2));
+	    JPasswordField password = new JPasswordField();
+	    controls.add(password);
+	    panel.add(controls, BorderLayout.CENTER);
+	    JOptionPane.showMessageDialog(frame, panel, "login", JOptionPane.QUESTION_MESSAGE);
+	    client.sendMessageToServer("LOBBY PERMISSION " + lobby.getName()+" " + new String(password.getPassword()));
 	}
 
 	public static Boolean checkForHtml(String html) {
@@ -408,30 +527,59 @@ public class WindowThread {
 			JOptionPane.showMessageDialog(frame, message);
 			
 		}
-
-		public void lobbyAdded(String string) {
-			this.receivedSystemMessage("Lobby added: "+string);
-			/*
-			for (int i = 0; i<dataLobby.length;i++) {
-				if (dataLobby[i].equals("") || dataLobby[i] == null) {
-					dataLobby[i] = string;
-					break;
-				}
-			}
-			*/
-			
-		}
 		
 		public void addUser(String name, int id) {
-			userListModel.addElement(name);
-			userList e = new userList(name, id);
-			this.userList.add(e);
+			Iterator<userList> userIterator = userList.iterator();
+			while (userIterator.hasNext()) {
+				userList user = userIterator.next();
+				if (user.getName().equalsIgnoreCase(name)) {
+					return;
+				} else {
+					userListModel.addElement(name);
+					userList e = new userList(name, id);
+					this.userList.add(e);
+				}
+			}
+			
 		}
 		
 		public void addLobby(String name, int id) {
 			lobbyListModel.addElement(name);
 			lobbyList e = new lobbyList(name, id);
 			this.lobbyList.add(e);
+		}
+		
+		public void removeLobby(String name, int id) {
+			lobbyListModel.removeElement(name);
+			Iterator<lobbyList> userIterator = lobbyList.iterator();
+			while (userIterator.hasNext()) {
+				lobbyList user = userIterator.next();
+				if (user.getName().equalsIgnoreCase(name)) {
+					lobbyList.remove(user);
+				}
+			}
+		}
+		
+		public void removeUser(String name, int id) {
+			userListModel.removeElement(name);
+			Iterator<userList> userIterator = userList.iterator();
+			while (userIterator.hasNext()) {
+				userList user = userIterator.next();
+				if (user.getName().equalsIgnoreCase(name)) {
+					userList.remove(user);
+				}
+			}
+		}
+
+		public void setPermission(String string, int i, Boolean perm) {
+			Iterator<lobbyList> userIterator = lobbyList.iterator();
+			while (userIterator.hasNext()) {
+				lobbyList user = userIterator.next();
+				if (user.getName().equalsIgnoreCase(string)) {
+					user.setPermission(perm);
+				}
+			}
+			
 		}
 		
 	

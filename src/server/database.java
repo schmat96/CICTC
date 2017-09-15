@@ -94,7 +94,7 @@ public class database {
 		Statement stmt = null;
 		try {
 			stmt = conn.createStatement();
-			String sql = "INSERT INTO `client` (`ID`, `name`, `ip`, `coins`) VALUES (NULL, '', '"+substring+"', '10');";
+			String sql = "INSERT INTO `client` (`ID`, `name`, `ip`, `coins`, `rechte`) VALUES (NULL, '', '"+substring+"', '10', '1');";
 			
 			stmt.executeUpdate(sql);
 			stmt.close();
@@ -183,8 +183,7 @@ public class database {
 		Statement stmt = null;
 		int coins = getCoins(id);
 		coins = coins + i;
-		
-		
+
 		try {
 			stmt = conn.createStatement();
 			String sql = "UPDATE `client` SET `coins` = '"+coins+"' WHERE `client`.`ID` = "+id+";";
@@ -196,6 +195,33 @@ public class database {
 			e.printStackTrace();
 		}
 		return coins;
+	}
+
+	public int getUserPermission(Client client) {
+		Statement stmt;
+		try {
+			stmt = conn.createStatement();
+		
+		String sql;
+		sql = "SELECT * FROM client";
+		ResultSet rs = stmt.executeQuery(sql);
+
+		//STEP 5: Extract data from result set
+		while(rs.next()){
+			if (rs.getString("Name").equalsIgnoreCase(client.getUsername())) {
+				int permission = rs.getInt("rechte");
+				rs.close();
+				stmt.close();
+				
+				return permission;
+			}
+		}
+		
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return -1;
 	}
 
 

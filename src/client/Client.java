@@ -43,7 +43,7 @@ public class Client {
 		  	pt.start();
 		  	*/
 		  	
-		  	WT = new WindowThread(this);
+		  	
 		  	//WT.start();
 		  	
 		  	if (username == "") {
@@ -53,6 +53,7 @@ public class Client {
 		  	this.sendMessageToServer("USERNAME " + username);
 		  	
 		  	//this.start();
+		  	WT = new WindowThread(this);
 		  	
 		  	
 	       
@@ -116,12 +117,6 @@ public class Client {
 		
 	}
 
-	public void receivedChatMessage(String message) {
-		if (WT != null) {
-		WT.receivedChatMessage(message);
-		}
-		System.out.println(message);
-	}
 
 	public void updatePing(String pingTook) {
 		if (WT != null) {
@@ -148,15 +143,49 @@ public class Client {
 	public void Systemmessage(String sysmessage) {
 		if (WT != null) {
 			WT.receivedSystemMessage(sysmessage);
-			}
+		}
 		
 	}
 
 	public void lobbyAdded(String string) {
 		if (WT != null) {
-			WT.lobbyAdded(string);
+			WT.addLobby(string, 1);
 			}
 		
 	}
+
+	public void receivedWhisperMessage(String message, String name) {
+		if (WT != null) {
+			WT.receivedWhisperMessage(message, name);
+			}
+	}
+	
+	public void receivedChatMessage(String message, String name) {
+		if (WT != null) {
+			WT.receivedChatMessage(message, name);
+			}
+	}
+	
+	public void addUser(String s) {
+		if (WT != null) {
+			WT.addUser(s, 1);
+		}
+	}
+
+	public void removeUser(String string) {
+		if (WT != null) {
+			WT.removeUser(string, 1);
+		}
+		
+	}
+
+	public void lobbyPermission(String string, Boolean perm) {
+		if (WT != null) {
+			WT.setPermission(string, 1, perm);
+		}
+		
+	}
+	
+	
 
 }

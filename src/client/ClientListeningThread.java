@@ -54,18 +54,39 @@ public class ClientListeningThread extends Thread {
 					} finally {
 						
 					}
-					
-					
+						
 					switch (input[0]) {
 						case "PING":
 							client.getPt().pingReceived(input[1]);
 							break;
 						case "CHAT":
 							String message = "";
-							for (int i = 1;i<input.length;i++) {
-								message = message + input[i] + " ";
-							}
-							client.receivedChatMessage(message);
+							String name = "";
+							switch (input[1]) {
+								
+								case "WHISPER":
+									name = input[2];
+									for (int i = 3;i<input.length;i++) {
+										message = message + input[i] + " ";
+									}
+									client.receivedWhisperMessage(message, name);
+									break;
+								case "LOBBY":
+									name = input[2];
+									for (int i = 3;i<input.length;i++) {
+										message = message + input[i] + " ";
+									}
+									client.receivedChatMessage(message, name); 
+									
+									break;
+								default:
+									for (int i = 2;i<input.length;i++) {
+										message = message + input[2] + " ";
+									}
+									client.Systemmessage(message);
+									
+								}
+
 						case "USERNAME":
 							client.changeUsername(input[1]);
 						case "LOBBY":
@@ -73,6 +94,9 @@ public class ClientListeningThread extends Thread {
 							case "ADD":
 								client.lobbyAdded(input[2]);
 								break;
+							case "PERMISSION":
+									client.lobbyPermission(input[2], true);
+									break;
 							}
 						case "SYSTEM":
 							switch (input[1]) {
@@ -100,6 +124,19 @@ public class ClientListeningThread extends Thread {
 									}
 									client.popUpMessage(popmessage);
 									break;
+								case "ADDUSER":
+									try {
+									client.addUser(input[2]);
+									} catch (Exception ArrayIndexOutOfBoundsException) {
+										
+									}
+									
+								case "REMOVEUSER":
+									try {
+									//client.removeUser(input[2]);
+									} catch (Exception ArrayIndexOutOfBoundsException) {
+										
+									}
 								default:
 									
 									break;

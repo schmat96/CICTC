@@ -8,15 +8,17 @@ import java.util.Iterator;
 public class Lobby {
 	
 	private String name;
+	private String passwort;
 	ArrayList<Client> users = new ArrayList<Client>();
 	
 	public Lobby() {
 		
 	}
 	
-	public Lobby(String name, Client c) {
+	public Lobby(String name, Client c, String string) {
 		this.name = name;
 		this.users.add(c);
+		this.passwort = string;
 	}
 	
 	public void removeClient(Client c) {
@@ -29,6 +31,10 @@ public class Lobby {
 	
 	public String getName() {
 		return name;
+	}
+	
+	public String getPasswort() {
+		return passwort;
 	}
 
 }
