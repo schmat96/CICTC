@@ -8,10 +8,18 @@ public class Client {
 
 	private String username = "";
 	private String ip = "";
+	
+	
+
+
 	private database db;
 	private int id;
 	public boolean clientAlreadyOpen;
-
+	
+	public String getIp() {
+		return ip;
+	}
+	
 	public Client(InetAddress inetAddress, database db) {
 		
 		this.db = db;

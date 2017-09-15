@@ -92,11 +92,25 @@ public class Server {
 	        try {
 				socket = serverSocket.accept();
 				clientThread clientThread = new clientThread(socket, this, db);
-				if(clientThread.terminateClient == false) { //if the client doesn't already exist start new client thread
-					clientThread.start();
+				//if(clientThread.terminateClient == false) { //if the client doesn't already exist start new client thread
+				clientThread.start();
+				
+				Iterator<clientThread> tobecheckedagainst = users.iterator();
+				
+				boolean canbeadded = true;
+				while(tobecheckedagainst.hasNext() ) {
+					clientThread checker = tobecheckedagainst.next();
+					if( clientThread.getIP().equals(checker.getIP()) ) {
+						clientThread.sendMessage("SYSTEM CLOSE");
+						canbeadded = false;
+					}
+					
+					
+				}
+				if(canbeadded) {
 					users.add(clientThread);
 				} else {
-					clientThread.sendMessage("SYSTEM CLOSE");	//else shutdown client
+					clientThread.stop();
 				}
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
