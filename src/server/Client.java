@@ -10,6 +10,7 @@ public class Client {
 	private String ip = "";
 	private database db;
 	private int id;
+	public boolean clientAlreadyOpen;
 
 	public Client(InetAddress inetAddress, database db) {
 		
@@ -18,9 +19,12 @@ public class Client {
 		
 		if (db.clientWithIPAlreadyExists(ip)) {
 			System.out.println("client already exists in database!");
+			clientAlreadyOpen = true;
+			
 		} else {
 			System.out.println("creating new client in database");
 			db.createNewClient(ip);
+			clientAlreadyOpen = false;
 		}
 		id = db.getIDfromDBdependingOnIP(ip);
 	}

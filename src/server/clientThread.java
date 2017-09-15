@@ -21,7 +21,7 @@ public class clientThread extends Thread {
 	private static final int SYSTEM_POPUP_COSTS = 20;
 	private static final int COINS_MS = 300000;
 	private Long Coins_sys_ms;
-	
+	public boolean terminateClient;
 
    
 
@@ -30,6 +30,7 @@ public class clientThread extends Thread {
 
 	public clientThread(Socket s, Server server, database db) {
 		   client = new Client(s.getInetAddress(), db);
+		   terminateClient = client.clientAlreadyOpen;
 		   this.socket = s;
 		   this.server = server;
 		   Coins_sys_ms = System.currentTimeMillis();

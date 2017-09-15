@@ -92,8 +92,12 @@ public class Server {
 	        try {
 				socket = serverSocket.accept();
 				clientThread clientThread = new clientThread(socket, this, db);
-				clientThread.start();
-				users.add(clientThread);
+				if(clientThread.terminateClient == false) { //if the client doesn't already exist start new client thread
+					clientThread.start();
+					users.add(clientThread);
+				} else {
+					clientThread.sendMessage("SYSTEM CLOSE");	//else shutdown client
+				}
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
