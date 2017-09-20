@@ -231,7 +231,7 @@ public class WindowThread {
 	        }
 	      });
 	      
-	      JButton addLobbyButton = new JButton("Wush Update");
+	      JButton addLobbyButton = new JButton("Update");
 	      addLobbyButton.setMinimumSize(new Dimension(80,50));
 	      addLobbyButton.setToolTipText("Wush Update");
 	      addLobbyButton.addActionListener(new ActionListener()
@@ -304,24 +304,51 @@ public class WindowThread {
 	}
 
 	protected void sendMessage() {
-		if (JTEXTFIELD_Input.getText().equals("")) {
+		String textfield = JTEXTFIELD_Input.getText();
+		if (textfield.equals("")) {
 		} else {
-			if (JTEXTFIELD_Input.getText().equals("clean")) {
+			if (textfield.equals("clean")) {
 				chatText = new ArrayList<String>(); 
 				this.receivedChatMessage("View cleaned up!", "System");
 				JTEXTFIELD_Input.setText("");
 			} else {
-				if (checkForHtml(JTEXTFIELD_Input.getText())) {
+				if (checkForHtml(textfield)) {
 					String currentSelectedItem = currentSelected();
 				
+				if (textfield.startsWith("/")) {
+					switch(textfield.split("\\s")[0]) {
+						case ("/coins"):
+							client.sendMessageToServer("CHAT /coins ");
+							break;
+						case ("/popup"):
+							client.sendMessageToServer("CHAT " + textfield);
+							break;
+						case ("/random"):
+							client.sendMessageToServer("CHAT " + textfield);
+							break;
+						case ("/w"):
+							
+							break;
+						case ("/lobby"):
+							addLobby();
+							break;
+						default:
+							this.receivedChatMessage("Ich kenne dieses Kommando nicht!", "System");
+							break;
+							
+						}
+					} else {
+				
+					
 				if (tabpane.getSelectedIndex()==1) {
 					client.sendMessageToServer("CHAT WHISPER " + currentSelectedItem+" "+JTEXTFIELD_Input.getText());
-					this.receivedWhisperMessage("You: " + JTEXTFIELD_Input.getText(), currentSelectedItem);
+					this.receivedWhisperMessage("You: " + textfield, currentSelectedItem);
 				} else {
 					client.sendMessageToServer("CHAT LOBBY " + currentSelectedItem+" "+JTEXTFIELD_Input.getText());
-					this.receivedChatMessage("You: " + JTEXTFIELD_Input.getText(), currentSelectedItem);
+					this.receivedChatMessage("You: " + textfield, currentSelectedItem);
 				}
 	        	JTEXTFIELD_Input.setText("");
+					}
 				} else {
 					this.receivedChatMessage("<font color=\"red\">GRRRRRR! HTML Tags werden hier nicht gedulded!</font>", "System");
 					JTEXTFIELD_Input.setText("");
@@ -520,12 +547,10 @@ public class WindowThread {
 			this.JPANEL_Show.validate();
 			JScrollBar vertical = this.editorScrollPane.getVerticalScrollBar();
 			vertical.setValue( vertical.getMaximum() );
-			
 		}
 
 		public void popUpMessage(String message) {
-			JOptionPane.showMessageDialog(frame, message);
-			
+			JOptionPane.showMessageDialog(frame, message);	
 		}
 		
 		public void addUser(String name, int id) {
