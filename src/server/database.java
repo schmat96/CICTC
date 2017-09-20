@@ -5,8 +5,8 @@ import java.sql.*;
 public class database {
 	// JDBC driver name and database URL
 	static final String JDBC_DRIVER = "com.mysql.jdbc.Driver";  
-	static final String DB_URL_old = "jdbc:mysql://localhost/cictc_database";
-	static final String DB_URL = "jdbc:mysql://172.16.2.177/cictc_database"; // Hier Schmids IP einfügen
+	static final String DB_URL = "jdbc:mysql://localhost/cictc_database";
+	static final String DB_URL_old = "jdbc:mysql://172.16.2.177/cictc_database"; // Hier Schmids IP einfügen
 																			//um Datenbank zu laden
 
 	//  Database credentials

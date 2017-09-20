@@ -35,21 +35,18 @@ public class clientThread extends Thread {
 	}
     
 	public clientThread(Socket s, Server server, database db) {
+			isRunning = false;
 		   client = new Client(s.getInetAddress(), db);
 		   terminateClient = client.clientAlreadyOpen;
-		   IP = client.getIp();
+		   IP = s.getInetAddress().toString().substring(1);
 		   this.socket = s;
 		   this.server = server;
-		   Coins_sys_ms = System.currentTimeMillis();
-
+		   Coins_sys_ms = System.currentTimeMillis();  
 	}
 	
 	public void run() {
 		while(isRunning) {
-			
-				
-			
-			
+
 			 try {
 		            inp = socket.getInputStream();
 		            brinp = new BufferedReader(new InputStreamReader(inp));

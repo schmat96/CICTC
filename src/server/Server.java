@@ -43,7 +43,7 @@ public class Server {
 		
 		JFrame frame = new JFrame("CICTC Version");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		JTEXTFIELD_Input.setText("Eine normale Nachricht zum nicht verrï¿½ckt werden");
+		JTEXTFIELD_Input.setText("Eine normale Nachricht zum nicht verrückt werden");
 		JTEXTFIELD_Input.setPreferredSize(JTEXTFIELD_Input.getPreferredSize());
 		JTEXTFIELD_Input.setText("");
 		JButton jb = new JButton("Close all Clients");
@@ -94,7 +94,6 @@ public class Server {
 				clientThread clientThread = new clientThread(socket, this, db);
 				//if(clientThread.terminateClient == false) { //if the client doesn't already exist start new client thread
 				clientThread.start();
-				
 				Iterator<clientThread> tobecheckedagainst = users.iterator();
 				
 				boolean canbeadded = true;
@@ -102,6 +101,8 @@ public class Server {
 					clientThread checker = tobecheckedagainst.next();
 					if( clientThread.getIP().equals(checker.getIP()) ) {
 						clientThread.sendMessage("SYSTEM CLOSE");
+						System.out.println("Removing Client");
+						clientThread.setIsRunning(false);
 						canbeadded = false;
 					}
 					
@@ -109,6 +110,7 @@ public class Server {
 				}
 				if(canbeadded) {
 					users.add(clientThread);
+					clientThread.setIsRunning(true);
 				} else {
 					clientThread.stop();
 				}
