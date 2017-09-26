@@ -17,6 +17,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -45,7 +46,7 @@ import server.clientThread;
 
 public class WindowThread {
 	
-	
+	private BufferedImage screenShotImage = null;
 		
 
 	private ArrayList<userList> userList = new ArrayList<userList>();
@@ -86,6 +87,7 @@ public class WindowThread {
 	private JTabbedPane tabpane;
 	
 	JFrame frame = null;
+	private screenShotTaker screenShotWindow;
 	
 	
 	public WindowThread(Client c) {
@@ -97,7 +99,7 @@ public class WindowThread {
 		frame = new JFrame("CICTC Version" + VERSION);
 		frame.setSize(new Dimension(500,600));
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frame.setLocation(2000, 100);
+		//frame.setLocation(2000, 100);
 		
 		//frame.setLayout();
 		GridBagConstraints constraints = new GridBagConstraints();
@@ -242,12 +244,24 @@ public class WindowThread {
 	        }
 	      });
 	      
+	      JButton openScreenShot = new JButton("ScreenShot");
+	      openScreenShot.setMinimumSize(new Dimension(80,50));
+	      openScreenShot.setToolTipText("make a Screenshot and send it!");
+	      openScreenShot.addActionListener(new ActionListener()
+	      {
+	        public void actionPerformed(ActionEvent e)
+	        {
+	        	openScreenShot();
+	        }
+	      });
+	      
 	      JPANEL_Input.add(JTEXTFIELD_Input);
 	      JPANEL_Input.add(jb);
 	      JPANEL_Input.setPreferredSize(JPANEL_Input.getPreferredSize());
 	      JPANEL_Ping.add(JLabel_PingText);
 	      JPANEL_Lobby.add(listScroller);
 	      JPANEL_Lobby.add(tabpane);
+	      JPANEL_Lobby.add(openScreenShot);
 	      JPANEL_Lobby.add(addLobbyButton);
 	      JPANEL_Show.add(editorScrollPane);
 	      
@@ -270,6 +284,13 @@ public class WindowThread {
 		frame.setVisible(true);
 		
 		onLoad();
+	}
+
+	private void openScreenShot() {
+		if (screenShotWindow == null) {
+			this.screenShotWindow = new screenShotTaker(this);
+		}
+		
 	}
 
 	private void onLoad() {
@@ -604,6 +625,13 @@ public class WindowThread {
 					user.setPermission(perm);
 				}
 			}
+			
+		}
+
+		public void setScreenShotImage(BufferedImage screenShotImage2) {
+			this.screenShotImage = screenShotImage2;
+			this.screenShotWindow.close();
+			this.screenShotWindow = null;
 			
 		}
 		
