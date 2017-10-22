@@ -1,27 +1,28 @@
 package server;
-
+import java.util.concurrent.ThreadLocalRandom;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import javax.swing.AbstractButton;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
-import java.sql.*;
 
 public class Server {
 	
 	private JTextField JTEXTFIELD_Input = new JTextField();
 	private ServerSocket serverSocket = null;
+
 	private Socket socket = null;
+
+	
+	private ScreenShotListenerThread  sslt = null;
 	
 	private JPanel JPANEL_Main = new JPanel();
 	
@@ -30,20 +31,25 @@ public class Server {
 	ArrayList<clientThread> users = new ArrayList<clientThread>();
 	
 	ArrayList<Lobby> lobbies = new ArrayList<Lobby>();
+	
+	ArrayList<Integer> randomPool = new ArrayList<Integer>();
+	
+	
 
 	public Server(int port) {
 		
-
+		randomPool.add(0000);
 		
 		try {
             serverSocket = new ServerSocket(port);
+           
         } catch (IOException e) {
             e.printStackTrace();
         }
 		
 		JFrame frame = new JFrame("CICTC Version");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		JTEXTFIELD_Input.setText("Eine normale Nachricht zum nicht verrückt werden");
+		JTEXTFIELD_Input.setText("Eine normale Nachricht zum nicht verrï¿½ckt werden");
 		JTEXTFIELD_Input.setPreferredSize(JTEXTFIELD_Input.getPreferredSize());
 		JTEXTFIELD_Input.setText("");
 		JButton jb = new JButton("Close all Clients");
@@ -92,28 +98,13 @@ public class Server {
 	        try {
 				socket = serverSocket.accept();
 				clientThread clientThread = new clientThread(socket, this, db);
+				
 				//if(clientThread.terminateClient == false) { //if the client doesn't already exist start new client thread
 				clientThread.start();
-				Iterator<clientThread> tobecheckedagainst = users.iterator();
+				clientThread.setIsRunning(true);
+				users.add(clientThread);
+				//this.sendInfos(clientThread.getClient());
 				
-				boolean canbeadded = true;
-				while(tobecheckedagainst.hasNext() ) {
-					clientThread checker = tobecheckedagainst.next();
-					if( clientThread.getIP().equals(checker.getIP()) ) {
-						clientThread.sendMessage("SYSTEM CLOSE");
-						System.out.println("Removing Client");
-						clientThread.setIsRunning(false);
-						canbeadded = false;
-					}
-					
-					
-				}
-				if(canbeadded) {
-					users.add(clientThread);
-					clientThread.setIsRunning(true);
-				} else {
-					clientThread.stop();
-				}
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -131,7 +122,6 @@ public class Server {
 		while (userIterator.hasNext()) {
 			clientThread user = userIterator.next();
 			user.sendMessage(string);
-			System.out.println("Sending to Client");
 		}
 		
 	}
@@ -139,6 +129,7 @@ public class Server {
 
 	public void closeClientThread(clientThread clientThread) {
 		clientThread finalUser = null;
+		this.messageToAllExcpectSender("SYSTEM REMOVEUSER "+clientThread.getClient().getID(),clientThread.getClient().getID());
 		Iterator<clientThread> userIterator = users.iterator();
 		while (userIterator.hasNext()) {
 			clientThread user = userIterator.next();
@@ -177,27 +168,27 @@ public class Server {
 	}
 
 
-	public void messageToAllExcpectSender(String s, String username) {
+	public void messageToAllExcpectSender(String s, int ID) {
 		Iterator<clientThread> userIterator = users.iterator();
 		while (userIterator.hasNext()) {
 			clientThread user = userIterator.next();
-			if (user.getClient().getUsername().equals(username)) {
-				user.sendMessage("SYSTEM SENDED");
+			if (user.getClient().getID() == ID) {
+				
 			} else {
 				user.sendMessage(s);
 			}
 			
-			System.out.println("Sending to Client: " + s);
+			
 		}
 		
 	}
 
 
-	public void messageToSpecified(String message, String to) {
+	public void messageToSpecified(String message, int id) {
 		Iterator<clientThread> userIterator = users.iterator();
 		while (userIterator.hasNext()) {
 			clientThread user = userIterator.next();
-			if (user.getClient().getUsername().equals(to)) {
+			if (user.getClient().getID() == id) {
 				user.sendMessage(message);
 		}
 		}
@@ -218,10 +209,37 @@ public class Server {
 				
 			}
 		}
-		Lobby lobby = new Lobby(string, client, passwort);
+		int id = idGenerator();
+		Lobby lobby = new Lobby(string, client, passwort, id);
 		this.lobbies.add(lobby);
-		this.messageToAll("LOBBY ADD "+ string);
+		this.messageToAll("LOBBY ADD "+ string + " " + id);
 		}
+	}
+
+
+	private int idGenerator() {
+		
+		Boolean needAnother = true;
+		int id = 0;
+		
+		while(needAnother) {
+			needAnother = false;	
+			
+			for (int i = 1; i<10000;i=i*10) {
+				id = id + ThreadLocalRandom.current().nextInt(10)*i;
+			}
+			
+			Iterator<Integer> randomPoolIt = this.randomPool.iterator();
+			while (randomPoolIt.hasNext()) {
+				if (randomPoolIt.next() == id) {
+					needAnother = true;
+				}
+				
+			}
+		}
+		
+		
+		return id;
 	}
 
 
@@ -242,41 +260,37 @@ public class Server {
 	}
 
 
-	public void removeClientFromLobby(String string, Client client) {
-		this.messageToAllExcpectSender("SYSTEM REMOVEUSER "+ string, string);
-		Iterator<Lobby> lobbyIterator = this.lobbies.iterator();
-		while (lobbyIterator.hasNext()) {
-			Lobby lobby = lobbyIterator.next();
-			if (lobby.getName().equals(string)) {
-				lobby.removeClient(client);
-				return;
-			}
-		}
-		
-		
-	}
-
-
 	public void sendInfos(Client client) {
+		String lobbiesToSend = "";
+		
 		Iterator<Lobby> lobbyIterator = this.lobbies.iterator();
 		while (lobbyIterator.hasNext()) {
 			Lobby lobby = lobbyIterator.next();
-			this.messageToSpecified("LOBBY ADD "+ lobby.getName(), client.getUsername());
+			lobbiesToSend = lobbiesToSend + lobby.getName() + " " + lobby.getID() + " ";
 		}
 		
-		Iterator<clientThread> userIterator = users.iterator();
+		if (lobbiesToSend.equalsIgnoreCase("")) {
+			
+		} else {
+			this.messageToSpecified("LOBBY ADD "+ lobbiesToSend, client.getID());
+		}
+		
+		String messageToSend = "";
+		
+		Iterator<clientThread> userIterator = this.users.iterator();
 		while (userIterator.hasNext()) {
 			clientThread user = userIterator.next();
-			this.messageToSpecified("SYSTEM ADDUSER " + user.getClient().getUsername(), client.getUsername());
+			messageToSend = messageToSend + user.getClient().getUsername() + " " +user.getClient().getID() + " ";
 		}
+		this.messageToSpecified("SYSTEM ADDUSER " + messageToSend, client.getID());
 	}
 
 
-	public Boolean LobbyPermission(String string, String string2, String name) {
+	public Boolean LobbyPermission(int ID, String string2, String name) {
 		Iterator<Lobby> lobbyIterator = this.lobbies.iterator();
 		while (lobbyIterator.hasNext()) {
 			Lobby lobby = lobbyIterator.next();
-			if (lobby.getName().equalsIgnoreCase(string)) {
+			if (lobby.getID() == ID) {
 				if (lobby.getPasswort().equalsIgnoreCase(string2)) {
 					return true;
 				} else {
@@ -287,6 +301,35 @@ public class Server {
 			
 		}
 		return false;
+		
+	}
+
+
+	public void setScreenShotListenerThread(boolean b) {
+		if (sslt != null) {
+			if (sslt.getIsRunning()==false) {
+		sslt.setIsRunning(true);
+		sslt.run();
+			}
+		}
+		
+		
+	}
+
+
+	public void sendReadyScreenshot(int ID, int toWhom) {
+		String ip = "";
+		Iterator<clientThread> userIterator = users.iterator();
+		while (userIterator.hasNext()) {
+			clientThread user = userIterator.next();
+			if (user.getClient().getID()==toWhom) {
+				 ip = user.getIP();
+			}
+		}
+		
+		
+		this.messageToSpecified("SYSTEM SCREENSHOTOPEN 16005", toWhom);
+		this.messageToSpecified("SYSTEM SCREENSHOTSEND "+ip+" 16005", ID);
 		
 	}
 }

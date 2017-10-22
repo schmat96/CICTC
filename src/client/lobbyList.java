@@ -8,7 +8,8 @@ public class lobbyList implements listForTabpane {
 	private ArrayList<String> conversation = new ArrayList<String>();
 	private String name = "";
 	private int id = 0;
-	private Boolean permission = false;
+	private Boolean permission = true;
+	private int newMessageCount = 0;
 	
 	
 	
@@ -47,6 +48,21 @@ public class lobbyList implements listForTabpane {
 
 	public void setPermission(Boolean perm) {
 		this.permission = perm;
+		
+	}
+
+	public int getID() {
+		// TODO Auto-generated method stub
+		return this.id;
+	}
+
+	public int getNewMessages() {
+		
+		return newMessageCount;
+	}
+
+	public void AddNewMessageCount(int i) {
+		this.newMessageCount = this.newMessageCount + i;
 		
 	}
 

@@ -1,16 +1,23 @@
 package client;
 
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.Socket;
+import java.nio.ByteBuffer;
+
+import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
 
 public class ClientListeningThread extends Thread {
 	
 	private Socket socket  = null;
 	private BufferedReader is = null;
-	private PrintWriter os = null;
 	private Boolean isRunning = true;
 	public Boolean getIsRunning() {
 		return isRunning;
@@ -21,6 +28,7 @@ public class ClientListeningThread extends Thread {
 	}
 
 	private Client client = null;
+	private InputStream inp;
 	
 
 	public ClientListeningThread(Socket s1, Client c) {
@@ -31,8 +39,13 @@ public class ClientListeningThread extends Thread {
 	
 	public void run() {
 		while(isRunning) {
+			String line = "";
 			try {
-				is=new BufferedReader(new InputStreamReader(socket.getInputStream()));
+	
+				 inp = socket.getInputStream();
+		            
+				is=new BufferedReader(new InputStreamReader(inp));
+				 line = is.readLine();
 				
 			} catch (IOException e) {
 				isRunning = false;
@@ -43,61 +56,70 @@ public class ClientListeningThread extends Thread {
 			String[] input = null;
 			
 			
-				try {
-					s = is.readLine();
-				} catch (IOException e) {
-					isRunning = false;
-					e.printStackTrace();
-				}
+				
+					s = line;
+					System.out.println(s);
+			
 					try {
 						input = s.split("\\s+");
 					} finally {
 						
 					}
+					
+					String comparison = input[0].toUpperCase();
+					comparison = comparison.replaceAll("\\s+", "");
 						
-					switch (input[0]) {
+					switch (comparison) {
 						case "PING":
-							client.getPt().pingReceived(input[1]);
+							
 							break;
 						case "CHAT":
 							String message = "";
-							String name = "";
-							switch (input[1]) {
-								
+							switch (input[1]) {							
 								case "WHISPER":
-									name = input[2];
-									for (int i = 3;i<input.length;i++) {
+									for (int i = 2;i<input.length;i++) {
 										message = message + input[i] + " ";
 									}
-									client.receivedWhisperMessage(message, name);
+									client.receivedChatMessage("<font color=\"blue\">" + message + "</font>", 0000);
 									break;
 								case "LOBBY":
-									name = input[2];
+									int idLobby = Integer.parseInt(input[2]);
 									for (int i = 3;i<input.length;i++) {
 										message = message + input[i] + " ";
 									}
-									client.receivedChatMessage(message, name); 
+									client.receivedChatMessage(message, idLobby); 
 									
 									break;
 								default:
 									for (int i = 2;i<input.length;i++) {
 										message = message + input[2] + " ";
 									}
-									client.Systemmessage(message);
+									client.receivedChatMessage(message, 0000);
 									
 								}
+								break;
 
 						case "USERNAME":
 							client.changeUsername(input[1]);
+							break;
 						case "LOBBY":
 							switch (input[1]) {
 							case "ADD":
-								client.lobbyAdded(input[2]);
+								try {
+								for (int i = 2;i<input.length;i=i+2) {
+								int idLobby = Integer.parseInt(input[i+1]);
+								System.out.println("Adding new Lobby with ID: " + idLobby);
+								client.lobbyAdded(input[i], idLobby);
+								}
+								} catch (Exception ArrayIndexOutOfBoundsException) {
+									
+								}
 								break;
 							case "PERMISSION":
-									client.lobbyPermission(input[2], true);
+									client.lobbyPermission(Integer.parseInt(input[2]), true);
 									break;
 							}
+							break;
 						case "SYSTEM":
 							switch (input[1]) {
 								case "CLOSE":
@@ -115,7 +137,7 @@ public class ClientListeningThread extends Thread {
 									for (int i = 2;i<input.length;i++) {
 										sysmessage = sysmessage + input[i] + " ";
 									}
-									client.Systemmessage(sysmessage);
+									client.receivedChatMessage(sysmessage, 0000);
 									break;
 								case "POPUP":
 									String popmessage = "";
@@ -126,23 +148,39 @@ public class ClientListeningThread extends Thread {
 									break;
 								case "ADDUSER":
 									try {
-									client.addUser(input[2]);
+										for (int i = 2;i<input.length;i=i+2) {
+											int idAddUser = Integer.parseInt(input[i+1]);
+											client.addUser(input[i], idAddUser);
+										}
+										
 									} catch (Exception ArrayIndexOutOfBoundsException) {
 										
 									}
-									
+									break;
 								case "REMOVEUSER":
 									try {
-									//client.removeUser(input[2]);
+									client.removeUser(Integer.parseInt(input[2]));
 									} catch (Exception ArrayIndexOutOfBoundsException) {
 										
 									}
+									break;
+								case "SCREENSHOTSEND":
+
+											client.sendScreenShot(input[2], input[3]);
+										
+											
+									break;
+								case "SCREENSHOTOPEN":
+									client.openScreenShotListener(input[2]);
+										break;
+
 								default:
-									
+									System.out.println("cant resolve message second level: " + s);
 									break;
 							}
+							break;
 						default:
-							//System.out.println(s);
+							System.out.println("cant resolve message first level: " + s);
 							break;
 					}
 					/*
@@ -154,6 +192,41 @@ public class ClientListeningThread extends Thread {
 			}
 			*/
 		}
+	}
+	
+	@SuppressWarnings("unused")
+	private void receivedScreenShot(InputStream inp2) {
+		System.out.println("Reading: " + System.currentTimeMillis());
+
+        byte[] sizeAr = new byte[4];
+        try {
+        	   
+			inp2.read(sizeAr);
+			int size = ByteBuffer.wrap(sizeAr).asIntBuffer().get();
+
+	        byte[] imageAr = new byte[size];
+	        inp2.read(imageAr);
+
+	        BufferedImage image = ImageIO.read(new ByteArrayInputStream(imageAr));
+	        System.out.println("Received " + image.getHeight() + "x" + image.getWidth() + ": " + System.currentTimeMillis());
+	        JFrame frame = new JFrame();
+            frame.getContentPane().add(new JLabel(new ImageIcon(image)));
+            frame.pack();
+            frame.setVisible(true);
+            while (inp2.read()!=-1) {
+            		System.out.println("there was something in the pipe");
+            }
+            return;
+            
+        } catch (IOException e) {
+			System.out.println("What there was an unexcpected Error");
+			e.printStackTrace();
+			return;
+		}
+        
+
+        
+		
 	}
 	
 	

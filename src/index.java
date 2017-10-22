@@ -1,5 +1,4 @@
 import client.Client;
-import client.WindowThread;
 import server.Server;
 
 public class index {
@@ -8,7 +7,7 @@ public class index {
 		
 
 			
-
+		
 			
 		
 		
@@ -16,8 +15,8 @@ public class index {
 			case "1":
 				try {
 					int port = Integer.parseInt(args[1]);
-					Client client = new Client(port,args[2]);
 					
+					new Client(port,args[2]);
 					
 				} catch (Exception e) {
 					// TODO: handle exception
@@ -27,7 +26,7 @@ public class index {
 			case "0":
 				try {
 					int port = Integer.parseInt(args[1]);
-					Server server = new Server(port);
+					new Server(port);
 				}
 					catch (Exception e) {
 					// TODO: handle exception

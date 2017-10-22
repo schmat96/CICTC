@@ -1,12 +1,12 @@
 package server;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 
 
 
 public class Lobby {
 	
+	private int id;
 	private String name;
 	private String passwort;
 	ArrayList<Client> users = new ArrayList<Client>();
@@ -15,7 +15,8 @@ public class Lobby {
 		
 	}
 	
-	public Lobby(String name, Client c, String string) {
+	public Lobby(String name, Client c, String string, int id) {
+		this.id = id;
 		this.name = name;
 		this.users.add(c);
 		this.passwort = string;
@@ -35,6 +36,10 @@ public class Lobby {
 	
 	public String getPasswort() {
 		return passwort;
+	}
+
+	public int getID() {
+		return this.id;
 	}
 
 }

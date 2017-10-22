@@ -35,4 +35,8 @@ public class userList implements listForTabpane {
 		
 	}
 
+	public int getID() {
+		return this.id;
+	}
+
 }

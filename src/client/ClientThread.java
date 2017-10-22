@@ -16,7 +16,7 @@ public class ClientThread extends Thread {
 
 
 	public ClientThread(Client c) {
-		this.client = c;
+		this.setClient(c);
 	}
 	
 	
@@ -24,6 +24,16 @@ public class ClientThread extends Thread {
 		while (isRunning) {
 			
 		}
+	}
+
+
+	public Client getClient() {
+		return client;
+	}
+
+
+	public void setClient(Client client) {
+		this.client = client;
 	}
 	
 }

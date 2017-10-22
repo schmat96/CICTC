@@ -1,12 +1,19 @@
 package server;
 
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.ByteBuffer;
+
+import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
 
 public class clientThread extends Thread {
 	
@@ -14,20 +21,21 @@ public class clientThread extends Thread {
 	private InputStream inp = null;
 	private BufferedReader brinp = null;
 	private DataOutputStream out = null;
-	private ServerSocket serverSocket = null;
+
 	private Boolean isRunning = true;
 	
-	private final static long coinGain_MS = 10000;
+	private long lastTimeSend;
+
+	
 	private static final int SYSTEM_POPUP_COSTS = 20;
 	private static final int COINS_MS = 300000;
 	private Long Coins_sys_ms;
 	public boolean terminateClient;
 	private String IP;
-   
 
 	
-
 	Socket socket = null;
+	Socket screenShotSocket = null;
     private Server server = null;
     
     public String getIP() {
@@ -40,42 +48,61 @@ public class clientThread extends Thread {
 		   terminateClient = client.clientAlreadyOpen;
 		   IP = s.getInetAddress().toString().substring(1);
 		   this.socket = s;
+		   lastTimeSend = System.currentTimeMillis();
 		   this.server = server;
 		   Coins_sys_ms = System.currentTimeMillis();  
 	}
 	
 	public void run() {
 		while(isRunning) {
-
 			 try {
 		            inp = socket.getInputStream();
 		            brinp = new BufferedReader(new InputStreamReader(inp));
 		            out = new DataOutputStream(socket.getOutputStream());
 		        } catch (IOException e) {
-		            return;
+		        	server.closeClientThread(this);
 		        }
 		        String line;
 		       
 		            try {
 		                line = brinp.readLine();
-		                System.out.println(line);
+		            } catch (IOException e) {
+		            		server.closeClientThread(this);
+		                return;
+		            }
+		                
+		                	
+		                	System.out.println("Received: "+line);
+		                	
+		                
 		                if ((line == null) || line.equalsIgnoreCase("QUIT")) {
 		                	server.closeClientThread(this);
-		                    socket.close();
+		                    try {
+								socket.close();
+							} catch (IOException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
 		                    isRunning = false;
 		                    return;
 		                } else {
-
 		                	String[] input = line.split("\\s+");
 		                	switch (input[0]) {
 		                		case "SYSTEM":
-	                			server.sendInfos(this.client);
+		                			switch (input[1]) {
+			                			case "GETINFOS":
+			                				server.sendInfos(this.client);
+			                				break;
+			                			case "SCREENSHOT":
+			                				this.server.sendReadyScreenshot(this.getClient().getID(), Integer.parseInt(input[2]));
+				                			break;
+		                			}
 	                			break;
 		                		case "USERNAME":           			
 		                			String username = this.server.checkUsername(input[1]);
 		                			this.client.setUsername(username);
 		                			this.sendMessage("USERNAME "+username);
-		                			server.messageToAllExcpectSender("SYSTEM ADDUSER " + username, username);
+		                			server.messageToAllExcpectSender("SYSTEM ADDUSER " + this.getClient().getUsername()+ " " +this.getClient().getID(), this.getClient().getID());
 		                			break;
 		                		case "PING":
 		                			server.messageToAll(line);
@@ -99,10 +126,10 @@ public class clientThread extends Thread {
 		                					this.server.addClientToLobby(input[2], this.client, "");
 		                					break;
 		                				case "LEAVE":   
-		                					this.server.removeClientFromLobby(input[2], this.client);
+		                					//this.server.removeClientFromLobby(this);
 		                					break;
 		                				case "PERMISSION" :
-		                					if (this.server.LobbyPermission(input[2], input[3], this.getName())) {
+		                					if (this.server.LobbyPermission(Integer.parseInt(input[2]), input[3], this.getName())) {
 		                						this.sendMessage("LOBBY PERMISSION " + input[2]);
 		                					} else {
 			                					this.sendMessage("SYSTEM MESSAGE Das Passwort war leider falsch.");
@@ -125,7 +152,7 @@ public class clientThread extends Thread {
 				                			for (int i = 3;i<input.length;i++) {
 				                				st = st + " " + input[i];
 				                			}
-				                			server.messageToSpecified(st, input[2]);
+				                			server.messageToSpecified(st, Integer.parseInt(input[2]));
 		                					break;
 		                				case "/random":   
 		                					try {
@@ -136,34 +163,74 @@ public class clientThread extends Thread {
 		                					}		
 		                					break;
 		                				case "LOBBY":   
-		                					String mes = "CHAT LOBBY " + input[2] + " " +this.client.getUsername()+":";
-				                			for (int i = 3;i<input.length;i++) {
-				                				mes = mes + " " + input[i];
+		                					String mes = "CHAT LOBBY " + input[2] + " " +this.client.getUsername()+": ";
+		                					String mes2 = "CHAT LOBBY " + input[2] + " You: ";
+		                					String zw = "";
+		                					for (int i = 3;i<input.length;i++) {
+		                						zw = zw + " " + input[i];
 				                			}
-				                			server.messageToAllExcpectSender(mes, this.client.getUsername());
+		                					mes = mes + zw;
+		                					mes2 = mes2 + zw;
+				                			server.messageToAllExcpectSender(mes, this.client.getID());
+				                			this.sendMessage(mes2);
 		                					break;
 		                				default:
 		                					String s = "CHAT LOBBY System " + this.client.getUsername()+" :";
 				                			for (int i = 1;i<input.length;i++) {
 				                				s = s + " " + input[i];
 				                			}
-				                			server.messageToAllExcpectSender(s, this.client.getUsername());
+				                			server.messageToAllExcpectSender(s, this.client.getID());
 		                					break;
 		                			}
 		                			
 		                			break;
 		            
 		                		default:
-		                			
-		                	}
+		                	}	
+		                	
 		                	
 		                }
-		            } catch (IOException e) {
-		                this.server.closeClientThread(this);
-		                return;
-		            }
+		            
 		       
 		}
+	}
+
+	@SuppressWarnings("unused")
+	private void receivedScreenShot(InputStream inp2) {
+		System.out.println("Reading: " + System.currentTimeMillis());
+
+        byte[] sizeAr = new byte[4];
+        try {
+        	   
+			inp2.read(sizeAr);
+			int size = ByteBuffer.wrap(sizeAr).asIntBuffer().get();
+
+	        byte[] imageAr = new byte[size];
+	        inp2.read(imageAr);
+
+	        BufferedImage image = ImageIO.read(new ByteArrayInputStream(imageAr));
+	        System.out.println("Received " + image.getHeight() + "x" + image.getWidth() + ": " + System.currentTimeMillis());
+	        JFrame frame = new JFrame();
+            frame.getContentPane().add(new JLabel(new ImageIcon(image)));
+            frame.pack();
+            frame.setVisible(true);
+            while (inp2.read()!=-1) {
+            		System.out.println("there was something in the pipe");
+            }
+            while (inp.read()!=-1) {
+        		System.out.println("there was something in the pipee");
+        }
+            return;
+            
+        } catch (IOException e) {
+			System.out.println("What there was an unexcpected Error");
+			e.printStackTrace();
+			return;
+		}
+        
+
+        
+		
 	}
 
 	private void random(String string) {
@@ -185,7 +252,7 @@ public class clientThread extends Thread {
 				this.sendMessage("SYSTEM MESSAGE Fortuna war mit dir. Dein Einsatz wurde versechsfacht. Oder so.");
 				this.client.earnedCoin(bet*6);
 			} else {
-				this.sendMessage("SYSTEM MESSAGE Vielleicht solltest du arbeiten anstatt mit deinem Gl�ck zu spielen. Du verlierst deinen Einsatz.");
+				this.sendMessage("SYSTEM MESSAGE Vielleicht solltest du arbeiten anstatt mit deinem Glück zu spielen. Du verlierst deinen Einsatz.");
 				this.client.earnedCoin(-bet);
 			}
 		}
@@ -200,7 +267,7 @@ public class clientThread extends Thread {
 			for (int i = 2;i<input.length;i++) {
 				s = s + " " + input[i];
 			}
-			server.messageToAllExcpectSender("SYSTEM POPUP "+s, this.client.getUsername());
+			server.messageToAllExcpectSender("SYSTEM POPUP "+s, this.client.getID());
 		} else {
 			sendMessage("SYSTEM MESSAGE Nicht genug coins! Du brauchst "+SYSTEM_POPUP_COSTS+" coins.");
 		}
@@ -210,7 +277,17 @@ public class clientThread extends Thread {
 
 	public void sendMessage(String string) {
 		try {
+			Boolean letServerKnow = true;
+    			while(50 > System.currentTimeMillis()-this.lastTimeSend) {
+    				if (letServerKnow) {
+    					System.out.println("Waiting cause ya server cant handle it");
+    					letServerKnow = false;
+    				}
+    				
+    			}
+    			lastTimeSend = System.currentTimeMillis();
 			out.writeBytes(string + "\n\r");
+			System.out.println("Sending to :"+this.getClient().getID()+" "+string);
 			
 			if ((int) (Math.random()*10)==1 && newCoin()) {
 				client.earnedCoin(10);
@@ -218,11 +295,11 @@ public class clientThread extends Thread {
 			}
 			
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			this.server.closeClientThread(this);
+			
 		}
 		
-	}//hoi
+	}
 	
 	  private boolean newCoin() {
 		if (System.currentTimeMillis() > COINS_MS + Coins_sys_ms) {
@@ -245,8 +322,4 @@ public class clientThread extends Thread {
 		public Client getClient() {
 			return this.client;
 		}
-		
-	
-	
-
 }

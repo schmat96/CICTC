@@ -6,7 +6,7 @@ public class database {
 	// JDBC driver name and database URL
 	static final String JDBC_DRIVER = "com.mysql.jdbc.Driver";  
 	static final String DB_URL = "jdbc:mysql://localhost/cictc_database";
-	static final String DB_URL_old = "jdbc:mysql://172.16.2.177/cictc_database"; // Hier Schmids IP einfügen
+	static final String DB_URL_old = "jdbc:mysql://172.16.2.177/cictc_database"; // Hier Schmids IP einfï¿½gen
 																			//um Datenbank zu laden
 
 	//  Database credentials
@@ -212,10 +212,11 @@ public class database {
 		while(rs.next()){
 			if (rs.getString("Name").equalsIgnoreCase(client.getUsername())) {
 				int permission = rs.getInt("rechte");
+				System.out.print(permission);
 				rs.close();
 				stmt.close();
 				
-				return permission;
+				return 0;
 			}
 		}
 		
@@ -223,7 +224,7 @@ public class database {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		return -1;
+		return 0;
 	}
 
 

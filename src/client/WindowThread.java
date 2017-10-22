@@ -2,24 +2,19 @@
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Container;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
-import java.awt.Insets;
 import java.awt.KeyEventDispatcher;
 import java.awt.KeyboardFocusManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
-import java.util.Hashtable;
 import java.util.Iterator;
 
 import javax.swing.BorderFactory;
@@ -40,12 +35,10 @@ import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
 import javax.swing.border.Border;
-import javax.swing.text.html.HTML;
-
-import server.clientThread;
 
 public class WindowThread {
 	
+	@SuppressWarnings("unused")
 	private BufferedImage screenShotImage = null;
 		
 
@@ -58,7 +51,7 @@ public class WindowThread {
 	
 	private static final Color RECEIVED_NEW_MESSAGE_BACKGROUND = new Color(204,255,153);
 	
-	private static final String VERSION = "1.05";
+	private static final String VERSION = "2.00";
 	
 	private static final int NUMBER_ROWS = 15;
 	private static int lastSelectedUser = 0;
@@ -76,13 +69,13 @@ public class WindowThread {
 	private JTextField JTEXTFIELD_Input = new JTextField();
 	private JLabel JLabel_PingText = new JLabel();
 	
+	@SuppressWarnings("rawtypes")
 	private JList JList_lobbyList;
 	String[] dataUsers;
+	@SuppressWarnings("rawtypes")
 	private JList JList_userList;
 	
 	private JScrollPane editorScrollPane;
-	 
-	private ArrayList<String> chatText = new ArrayList<String>();
 	
 	private JTabbedPane tabpane;
 	
@@ -90,6 +83,7 @@ public class WindowThread {
 	private screenShotTaker screenShotWindow;
 	
 	
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public WindowThread(Client c) {
 		
 		//JPANEL_MAIN.setLayout(new GridLayout(10,1,10,1));
@@ -198,7 +192,7 @@ public class WindowThread {
 		            changeShowView(list.getSelectedValue());
 		        } else if (evt.getClickCount() == 3) {
 
-		            int index = list.locationToIndex(evt.getPoint());
+		 
 		            addUser("name", 3);
 		        }
 		    }
@@ -214,7 +208,9 @@ public class WindowThread {
 		tabpane.addTab("Lobby", JList_lobbyList);
 		tabpane.addTab("Users", JList_userList);
 		
-		this.addLobby("System", 0);
+		this.addLobby("System", 0000);
+		lobbyList l = new lobbyList("System", 0000);
+		this.lobbyList.add(l);
 		
 	      
 	      
@@ -323,18 +319,17 @@ public class WindowThread {
 		
 		
 	}
-
+	
 	protected void sendMessage() {
+		
 		String textfield = JTEXTFIELD_Input.getText();
 		if (textfield.equals("")) {
 		} else {
 			if (textfield.equals("clean")) {
-				chatText = new ArrayList<String>(); 
-				this.receivedChatMessage("View cleaned up!", "System");
+				this.receivedChatMessage("View cleaned up!", 0000);
 				JTEXTFIELD_Input.setText("");
 			} else {
 				if (checkForHtml(textfield)) {
-					String currentSelectedItem = currentSelected();
 				
 				if (textfield.startsWith("/")) {
 					switch(textfield.split("\\s")[0]) {
@@ -348,13 +343,23 @@ public class WindowThread {
 							client.sendMessageToServer("CHAT " + textfield);
 							break;
 						case ("/w"):
+							this.sendWhisperMessage(textfield);
+							textfield = "/w "+textfield.split("\\s")[1];
+							break;
+						case ("/users"):
+							Iterator<userList> userIterator2 = userList.iterator();
+							while (userIterator2.hasNext()) {
+								userList user = userIterator2.next();
+								this.receivedChatMessage(user.getID() + ":"+user.getName(), 0000);
+							}
+							
 							
 							break;
 						case ("/lobby"):
 							addLobby();
 							break;
 						default:
-							this.receivedChatMessage("Ich kenne dieses Kommando nicht!", "System");
+							this.receivedChatMessage("Ich kenne dieses Kommando nicht!", 0000);
 							break;
 							
 						}
@@ -362,16 +367,26 @@ public class WindowThread {
 				
 					
 				if (tabpane.getSelectedIndex()==1) {
-					client.sendMessageToServer("CHAT WHISPER " + currentSelectedItem+" "+JTEXTFIELD_Input.getText());
-					this.receivedWhisperMessage("You: " + textfield, currentSelectedItem);
+					int ID = currentSelectedItemChat();
+					if (ID == 0000) {
+						this.receivedWhisperMessage("System: Bitte wähle zuerst an wen die Nachricht gehen soll!", ID);
+					} else {
+					client.sendMessageToServer("CHAT WHISPER " + ID +" "+JTEXTFIELD_Input.getText());
+					//this.receivedWhisperMessage("You: " + textfield, ID);
+					}
 				} else {
-					client.sendMessageToServer("CHAT LOBBY " + currentSelectedItem+" "+JTEXTFIELD_Input.getText());
-					this.receivedChatMessage("You: " + textfield, currentSelectedItem);
+					int ID = currentSelectedItemLobby();
+					if (ID == 0000) {
+						this.receivedWhisperMessage("System: Bitte wähle zuerst an wen die Nachricht gehen soll!", ID);
+					} else {
+					client.sendMessageToServer("CHAT LOBBY " + ID  +" "+JTEXTFIELD_Input.getText());
+					//this.receivedChatMessage("You: " + textfield, ID);
+					}
 				}
 	        	JTEXTFIELD_Input.setText("");
 					}
 				} else {
-					this.receivedChatMessage("<font color=\"red\">GRRRRRR! HTML Tags werden hier nicht gedulded!</font>", "System");
+					this.receivedChatMessage("<font color=\"red\">GRRRRRR! HTML Tags werden hier nicht gedulded!</font>", 0000);
 					JTEXTFIELD_Input.setText("");
 				}
 			}
@@ -381,8 +396,59 @@ public class WindowThread {
 		
 	}
 
+	private void sendWhisperMessage(String string) {
+		String message = "";
+		String[] hue = string.split("\\s");
+		for (int i = 2;i<hue.length;i++) {
+			message = message + " " + hue[i];
+		}
+		
+		
+		int id = 0;
+		try {
+			id = Integer.parseInt(hue[1]);
+		} catch (NumberFormatException e) {
+			id = 0;
+		}
+		if (id == 0) {
+			Iterator<userList> userIterator2 = userList.iterator();
+			while (userIterator2.hasNext()) {
+				userList user = userIterator2.next();
+				if (user.getName().equals(hue[1])) {
+					this.client.sendMessageToServer("CHAT WHISPER " + user.getID() + " " + message);
+				}
+			}
+		} else {
+			this.client.sendMessageToServer("CHAT WHISPER " + id + " " + message);
+		}
+		
+	}
+
+	private int currentSelectedItemLobby() {
+		Iterator<lobbyList> userIterator = lobbyList.iterator();
+		while (userIterator.hasNext()) {
+			lobbyList lobby = userIterator.next();
+			if (lobby.getName().equalsIgnoreCase(this.currentSelected())) {
+				return lobby.getID();
+			}
+			
+		}
+		return 0000;
+	}
+
+	private int currentSelectedItemChat() {
+		Iterator<userList> userIterator = userList.iterator();
+		while (userIterator.hasNext()) {
+			userList lobby = userIterator.next();
+			if (lobby.getName().equalsIgnoreCase(this.currentSelected())) {
+				return lobby.getID();
+			}
+			
+		}
+		return 0000;
+	}
+
 	private String currentSelected() {
-		String select = "";
 		if (tabpane.getSelectedIndex()==1) {
 			return this.userListModel.getElementAt(lastSelectedUser);
 		} else {
@@ -391,53 +457,36 @@ public class WindowThread {
 		
 	}
 
-	public void receivedChatMessage(String message, String lobbyName) {
+	public void receivedChatMessage(String message, int ID) {
 		Boolean found = false;
 		Iterator<lobbyList> userIterator = lobbyList.iterator();
 		while (userIterator.hasNext()) {
 			lobbyList lobby = userIterator.next();
-			if (lobby.getName().equalsIgnoreCase(lobbyName)) {
-				lobby.addText(message);
-				for (int i = 0; i<lobbyListModel.getSize();i++) {
-					try {
-					if (lobbyListModel.get(i).equalsIgnoreCase(lobbyName)) {
-						int indexBackUp = JList_lobbyList.getSelectedIndex();
-						JList_lobbyList.setSelectedIndex(i);
-						JList_lobbyList.setSelectionBackground(RECEIVED_NEW_MESSAGE_BACKGROUND);
-						JList_lobbyList.setSelectedIndex(indexBackUp);
-						} 
-					} catch (Exception e) {
-						System.out.println(e.getStackTrace());
-					}
-					
-					
-					
-					
-				}
-				
+			if (lobby.getID() == ID) {
 				found = true;
+				lobby.addText(message);
+				lobby.AddNewMessageCount(1);
 			}
 		}
 		
 		if (found == false) {
 			System.out.println("was not able to resolve lobby");
-			this.addLobby(lobbyName, 1);
-			this.receivedChatMessage(message, lobbyName);
+			getLobbySaveMessageInTrace(message, ID);
 			
 		}
 		//ADD CALL ONLY IF TAB IS ON THAT LOBBY
 		reloadChatText();
 	}
-	
-	public void receivedWhisperMessage(String message, String name) {
+
+	public void receivedWhisperMessage(String message, int ID) {
 		Boolean found = false;
 		Iterator<userList> userIterator = userList.iterator();
 		while (userIterator.hasNext()) {
 			userList user = userIterator.next();
-			if (user.getName().equalsIgnoreCase(name.trim())) {
+			if (user.getID() == ID) {
 				user.addText(message);
 				for (int i = 0; i<userListModel.getSize();i++) {
-					if (userListModel.get(i).equalsIgnoreCase(name)) {
+					if (userListModel.get(i).equalsIgnoreCase(user.getName())) {
 						int indexBackUp = JList_userList.getSelectedIndex();
 						JList_userList.setSelectedIndex(i);
 						JList_userList.setSelectionBackground(RECEIVED_NEW_MESSAGE_BACKGROUND);
@@ -451,12 +500,16 @@ public class WindowThread {
 		
 		if (found == false) {
 			System.out.println("was not able to resolve lobby");
-			this.addUser(name, 1);
-			this.receivedChatMessage(message, name);
+			getLobbySaveMessageInTrace(message, ID);
 			
 		}
 		//ADD CALL ONLY IF TAB IS ON THAT LOBBY
 		reloadChatText();
+	}
+
+	private void getLobbySaveMessageInTrace(String message, int iD) {
+		System.out.println("Had to save message in Trace!");
+		
 	}
 
 	private void reloadChatText() {
@@ -511,7 +564,7 @@ public class WindowThread {
 	    controls.add(password);
 	    panel.add(controls, BorderLayout.CENTER);
 	    JOptionPane.showMessageDialog(frame, panel, "login", JOptionPane.QUESTION_MESSAGE);
-	    client.sendMessageToServer("LOBBY PERMISSION " + lobby.getName()+" " + new String(password.getPassword()));
+	    client.sendMessageToServer("LOBBY PERMISSION " + lobby.getID()+" " + new String(password.getPassword()));
 	}
 
 	public static Boolean checkForHtml(String html) {
@@ -548,22 +601,6 @@ public class WindowThread {
 	        }
 	    }
 
-		public void receivedSystemMessage(String shutdownMes) {
-			String hue = "";
-			chatText.add("<h3><b>System: "+shutdownMes+"</b></h3>");
-			Iterator<String> userIterator = chatText.iterator();
-			while (userIterator.hasNext()) {
-				String user = userIterator.next();
-				hue = hue + "<br>" + user;
-			}
-			JEDITORPANE_Chat.setText( hue );
-			JEDITORPANE_Chat.setContentType("text/html");
-			JScrollBar vertical = this.editorScrollPane.getVerticalScrollBar();
-			vertical.setValue( vertical.getMaximum() );
-			scrollDown();
-			
-		}
-
 		private void scrollDown() {
 			this.JPANEL_Show.validate();
 			JScrollBar vertical = this.editorScrollPane.getVerticalScrollBar();
@@ -575,24 +612,41 @@ public class WindowThread {
 		}
 		
 		public void addUser(String name, int id) {
+			Boolean adding = true;
 			Iterator<userList> userIterator = userList.iterator();
 			while (userIterator.hasNext()) {
 				userList user = userIterator.next();
-				if (user.getName().equalsIgnoreCase(name)) {
-					return;
-				} else {
-					userListModel.addElement(name);
-					userList e = new userList(name, id);
-					this.userList.add(e);
+				if (user.getID()==id) {
+					adding = false;
 				}
 			}
 			
-		}
+			if (adding) {
+				//userListModel.addElement(name);
+				userList e = new userList(name, id);
+				this.userList.add(e);
+			}
+					
+
+			}
+			
 		
 		public void addLobby(String name, int id) {
-			lobbyListModel.addElement(name);
-			lobbyList e = new lobbyList(name, id);
-			this.lobbyList.add(e);
+			Boolean adding = true;
+			Iterator<lobbyList> userIterator = lobbyList.iterator();
+			while (userIterator.hasNext()) {
+				lobbyList user = userIterator.next();
+				if (user.getID() == id) {
+					adding = false;
+				}
+			}
+			if (adding) {
+				lobbyListModel.addElement(name);
+				lobbyList e = new lobbyList(name, id);
+				this.lobbyList.add(e);
+			} else {
+				System.out.println("nothing to add");
+			}
 		}
 		
 		public void removeLobby(String name, int id) {
@@ -606,22 +660,23 @@ public class WindowThread {
 			}
 		}
 		
-		public void removeUser(String name, int id) {
-			userListModel.removeElement(name);
+		public void removeUser(int id) {
+			
 			Iterator<userList> userIterator = userList.iterator();
 			while (userIterator.hasNext()) {
 				userList user = userIterator.next();
-				if (user.getName().equalsIgnoreCase(name)) {
+				if (user.getID()==id) {
+					userListModel.removeElement(user.getName());
 					userList.remove(user);
 				}
 			}
 		}
 
-		public void setPermission(String string, int i, Boolean perm) {
+		public void setPermission(int i, Boolean perm) {
 			Iterator<lobbyList> userIterator = lobbyList.iterator();
 			while (userIterator.hasNext()) {
 				lobbyList user = userIterator.next();
-				if (user.getName().equalsIgnoreCase(string)) {
+				if (user.getID() == i) {
 					user.setPermission(perm);
 				}
 			}
@@ -633,7 +688,49 @@ public class WindowThread {
 			this.screenShotWindow.close();
 			this.screenShotWindow = null;
 			
+			if (this.userList.size()==0) {
+				this.receivedChatMessage("Du hast keine Freunde denen du Screenshots senden könntest!", 0000);
+			} else {
+			String[] choices = new String[this.userList.size()];
+			int i = 0;
+			Iterator<userList> userIterator = userList.iterator();
+			while (userIterator.hasNext()) {
+				userList user = userIterator.next();
+				choices[i] = user.getName();
+				i++;
+			}
+			
+			
+			
+			
+			String toWhom = askUser(choices);
+			
+			int idtoWhom = 0;
+			
+			Iterator<userList> userIterator2 = userList.iterator();
+			while (userIterator2.hasNext()) {
+				userList user = userIterator2.next();
+				if (user.getName().equalsIgnoreCase(toWhom)) {
+					idtoWhom = user.getID();
+				}
+			}
+			
+			
+			client.setScreenShot(screenShotImage2, idtoWhom+"");
+			}
 		}
+		
+		public String askUser(String[] choices) {
+	        String s = (String) JOptionPane.showInputDialog(
+	                null,
+	                "Wem willst du das Bild senden?",
+	                "Wem willst du das Bild senden?",
+	                JOptionPane.PLAIN_MESSAGE,
+	                null,
+	                choices,
+	                choices[0]);
+	        return s;
+	    }
 		
 	
 	

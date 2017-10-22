@@ -1,12 +1,8 @@
 package client;
 
-import java.io.BufferedReader;
-import java.io.PrintWriter;
-import java.net.Socket;
-import java.util.ArrayList;
-import java.util.Iterator;
 
-import server.clientThread;
+import java.util.ArrayList;
+
 
 @Deprecated
 public class PingThread extends Thread {
@@ -18,6 +14,7 @@ public class PingThread extends Thread {
 	
 
 	private Client client = null;
+	@SuppressWarnings("unused")
 	private int pingsNotReceived;
 	ArrayList<Long> ping = new ArrayList<Long>();
 	
@@ -27,6 +24,7 @@ public class PingThread extends Thread {
 		
 	}
 	
+	@SuppressWarnings("static-access")
 	public void run() {
 		
 		while (isRunning) {

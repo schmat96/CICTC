@@ -1,17 +1,9 @@
 package client;
 
 import java.awt.AWTException;
-import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Graphics;
-import java.awt.GraphicsEnvironment;
-import java.awt.HeadlessException;
-import java.awt.KeyboardFocusManager;
 import java.awt.Rectangle;
 import java.awt.Robot;
-import java.awt.Toolkit;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
@@ -21,16 +13,12 @@ import java.awt.image.BufferedImage;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JList;
-import javax.swing.JPanel;
 
 
 
 public class screenShotTaker implements KeyListener {
 	
 	private JFrame frame;
-	private Boolean isRunning = true;
-	private Long againMS = System.currentTimeMillis();
 	private BufferedImage screenShotImage = null;
 	private JLabel screenHolder;
 	private WindowThread WT;
@@ -59,26 +47,47 @@ public class screenShotTaker implements KeyListener {
 	        		int height = frame.getBounds().height;
 	        		int width = frame.getBounds().width;        		
 	        		frame.setVisible(false);
+//	        		frame.setLocation(1000, 1000);
 	        		frame.setSize(new Dimension(0,0));
+	        		frame.remove(screenHolder);
+	        		long time = System.currentTimeMillis();
+	        		System.out.println("Da Windows einfach schlechter ist als Mac muss ich hier 1.5secs warten");
+	        		while(time + 150 > System.currentTimeMillis()) {
+	        			
+	        		}
 					 try {
 						screenShotImage = new Robot().createScreenCapture(new Rectangle(x,y, width, height));
-					} catch (AWTException e) {
+					 } catch (AWTException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 					 //screenHolder.setVisible(true);
 					 frame.setLocation(x, y);
 		        		frame.setVisible(true);
+		        		
+		        		
 					 ImageIcon imageIcon = new ImageIcon(screenShotImage);
+					 
 					 screenHolder.setIcon(imageIcon);
 					 
 					 frame.setSize(new Dimension(width,height));
+					 frame.add(screenHolder);
 		        	
 		        }
 		       
 		    }
 		});
 		
+	}
+
+
+
+	protected BufferedImage makeImageOpaque(BufferedImage screenShotImage2) {
+		
+		
+		
+		BufferedImage image = screenShotImage2;
+		return image;
 	}
 
 

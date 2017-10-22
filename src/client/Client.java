@@ -1,20 +1,26 @@
 package client;
 
-import java.io.BufferedReader;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
 
 public class Client {
 	
 	public boolean isRunning = true;
 	private Socket s1 = null;
 	private PrintWriter os;
-	private PingThread pt;
 	private ClientListeningThread CLT;
 	private WindowThread WT = null;
 	private String username = "";
+	private BufferedImage ScreenShot;
+	private ServerSocket serverSocket;
 
 
 	public Client(int port, String ip) {
@@ -52,8 +58,6 @@ public class Client {
 		  	
 		  	this.sendMessageToServer("USERNAME " + username);
 		  	
-		  	//this.start();
-		  	//hooooooooooooooooooooooooooooooooooooooodoooooooiiiiii
 		  	WT = new WindowThread(this);
 		  	
 		  	
@@ -99,21 +103,12 @@ public class Client {
 
 	public void sendMessageToServer(String string) {
 		os.println(string);
-		os.flush();
+	    os.flush();
 		
-	}
-	
-	public PingThread getPt() {
-		return pt;
-	}
-
-	public void setPt(PingThread pt) {
-		this.pt = pt;
 	}
 
 	public void stopAll() {
 		this.isRunning = false;
-		this.pt.setRunning(false);
 		this.CLT.setIsRunning(false);
 		
 	}
@@ -141,51 +136,114 @@ public class Client {
 		
 	}
 
-	public void Systemmessage(String sysmessage) {
+	public void lobbyAdded(String string, int id) {
 		if (WT != null) {
-			WT.receivedSystemMessage(sysmessage);
-		}
-		
+			WT.addLobby(string, id);
+			}		
 	}
 
-	public void lobbyAdded(String string) {
+	public void receivedWhisperMessage(String message, int id) {
 		if (WT != null) {
-			WT.addLobby(string, 1);
-			}
-		
-	}
-
-	public void receivedWhisperMessage(String message, String name) {
-		if (WT != null) {
-			WT.receivedWhisperMessage(message, name);
+			WT.receivedWhisperMessage(message, id);
 			}
 	}
 	
-	public void receivedChatMessage(String message, String name) {
+	public void receivedChatMessage(String message, int id) {
 		if (WT != null) {
-			WT.receivedChatMessage(message, name);
+			WT.receivedChatMessage(message, id);
 			}
 	}
 	
-	public void addUser(String s) {
+	public void addUser(String s, int id) {
 		if (WT != null) {
-			WT.addUser(s, 1);
+			WT.addUser(s, id);
 		}
 	}
 
-	public void removeUser(String string) {
+	public void removeUser(int id) {
 		if (WT != null) {
-			WT.removeUser(string, 1);
+			WT.removeUser(id);
 		}
 		
 	}
 
-	public void lobbyPermission(String string, Boolean perm) {
+	public void lobbyPermission(int id, Boolean perm) {
 		if (WT != null) {
-			WT.setPermission(string, 1, perm);
+			WT.setPermission(id, perm);
 		}
 		
 	}
+
+	public void setScreenShot(BufferedImage screenShotImage2, String ID) {
+		if (ScreenShot==null) {
+		this.ScreenShot = screenShotImage2;
+		this.sendMessageToServer("SYSTEM SCREENSHOT "+ ID);
+		} else {
+			WT.receivedChatMessage("U can only send 1 ScreenShot at a Time!", 0000);
+		}
+		
+	}
+
+	public void sendScreenShot(String input, String port) {
+		if (ScreenShot!=null) {
+		Socket screenShotSocket = null;
+		while(screenShotSocket==null) {
+		
+		try {
+			screenShotSocket=new Socket(input, Integer.parseInt(port));
+		} catch (UnknownHostException e1) {
+			screenShotSocket = null;
+			e1.printStackTrace();
+		} catch (IOException e1) {
+			screenShotSocket = null;
+			e1.printStackTrace();
+		}
+	}
+		System.out.println("Sending ScreenShot");
+		try {
+			OutputStream outputStream = screenShotSocket.getOutputStream();
+	        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+	        ImageIO.write(ScreenShot, "JPG", byteArrayOutputStream);
+	        byte[] size = ByteBuffer.allocate(4).putInt(byteArrayOutputStream.size()).array();
+	        
+	        outputStream.write(size);
+	        outputStream.write(byteArrayOutputStream.toByteArray());
+	        //outputStream.write(b);
+	        outputStream.flush();
+	        
+	        System.out.println("Flushed: " + System.currentTimeMillis());
+		} catch (IOException e) {
+			System.out.println("failed");
+			e.printStackTrace();
+		}
+		this.ScreenShot = null;
+		try {
+			screenShotSocket.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		}
+	}
+
+	public void openScreenShotListener(String string) {
+		int port = Integer.parseInt(string);
+		
+		
+		try {
+            serverSocket = new ServerSocket(port);
+           
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+		
+		new screenShotListener(serverSocket);
+		
+		
+		
+	}										
+
+
 	
 	
 
