@@ -94,7 +94,7 @@ public class clientThread extends Thread {
 			                				server.sendInfos(this.client);
 			                				break;
 			                			case "SCREENSHOT":
-			                				this.server.sendReadyScreenshot(this.getClient().getID(), Integer.parseInt(input[2]));
+			                				this.server.sendReadyScreenshot(this.getClient().getID(), Integer.parseInt(input[2]), Integer.parseInt(input[3]));
 				                			break;
 		                			}
 	                			break;
@@ -148,11 +148,15 @@ public class clientThread extends Thread {
 		                					this.sendMessage("SYSTEM MESSAGE Du hast "+this.client.getCoins() + " Coins!");
 		                					break;
 		                				case "WHISPER":   
-		                					String st = "CHAT WHISPER " + this.client.getUsername() + " ";
+		                					int id = Integer.parseInt(input[2]);
+		                					String st = "CHAT WHISPER "+ this.getClient().getID()+ " " + this.client.getUsername() + " ";
+		                					String msg = "CHAT WHISPER  "+ id+ " You:";
 				                			for (int i = 3;i<input.length;i++) {
 				                				st = st + " " + input[i];
+				                				msg = msg + " " + input[i];
 				                			}
-				                			server.messageToSpecified(st, Integer.parseInt(input[2]));
+				                			server.messageToSpecified(st, id);
+				                			this.sendMessage(msg);
 		                					break;
 		                				case "/random":   
 		                					try {

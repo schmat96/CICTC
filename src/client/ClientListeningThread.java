@@ -77,10 +77,11 @@ public class ClientListeningThread extends Thread {
 							String message = "";
 							switch (input[1]) {							
 								case "WHISPER":
-									for (int i = 2;i<input.length;i++) {
+									int id = Integer.parseInt(input[2]);
+									for (int i = 3;i<input.length;i++) {
 										message = message + input[i] + " ";
 									}
-									client.receivedChatMessage("<font color=\"blue\">" + message + "</font>", 0000);
+									client.receivedWhisperMessage("<font color=\"blue\">" + message + "</font>", id);
 									break;
 								case "LOBBY":
 									int idLobby = Integer.parseInt(input[2]);
@@ -171,7 +172,7 @@ public class ClientListeningThread extends Thread {
 											
 									break;
 								case "SCREENSHOTOPEN":
-									client.openScreenShotListener(input[2]);
+									client.openScreenShotListener(input[2], Integer.parseInt(input[3]));
 										break;
 
 								default:

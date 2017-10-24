@@ -18,14 +18,18 @@ public class screenShotListener extends Thread {
 	private InputStream inp = null;
 
 	private Boolean isRunning = true;
+	
+	private int waiting = 1000;
 
 	
 	ServerSocket serversocket = null;
 	Socket socket = null;
     
-	public screenShotListener(ServerSocket s) {
+	public screenShotListener(ServerSocket s, int waitingg) {
 		   this.serversocket = s;
+		   this.waiting = waitingg;
 		   this.run();
+		   
 	}
 	
 	public void run() {
@@ -57,9 +61,16 @@ public class screenShotListener extends Thread {
 
         byte[] sizeAr = new byte[4];
         try {
-        	   
+        		long time = System.currentTimeMillis();
+    			System.out.println("Da Windows einfach schlechter ist als Mac muss ich hier "+this.waiting+"ms warten");
+    			while(time + this.waiting > System.currentTimeMillis()) {
+    			
+    			}
+
 			inp2.read(sizeAr);
 			int size = ByteBuffer.wrap(sizeAr).asIntBuffer().get();
+			
+
 
 	        byte[] imageAr = new byte[size];
 	        inp2.read(imageAr);

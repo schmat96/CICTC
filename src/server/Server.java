@@ -317,7 +317,7 @@ public class Server {
 	}
 
 
-	public void sendReadyScreenshot(int ID, int toWhom) {
+	public void sendReadyScreenshot(int ID, int toWhom, int waiting) {
 		String ip = "";
 		Iterator<clientThread> userIterator = users.iterator();
 		while (userIterator.hasNext()) {
@@ -328,7 +328,7 @@ public class Server {
 		}
 		
 		
-		this.messageToSpecified("SYSTEM SCREENSHOTOPEN 16005", toWhom);
+		this.messageToSpecified("SYSTEM SCREENSHOTOPEN 16005 "+waiting, toWhom);
 		this.messageToSpecified("SYSTEM SCREENSHOTSEND "+ip+" 16005", ID);
 		
 	}

@@ -190,11 +190,7 @@ public class WindowThread {
 		            lastSelectedUser = index;
 		            reloadChatText();
 		            changeShowView(list.getSelectedValue());
-		        } else if (evt.getClickCount() == 3) {
-
-		 
-		            addUser("name", 3);
-		        }
+		        } 
 		    }
 		});
 		
@@ -622,7 +618,7 @@ public class WindowThread {
 			}
 			
 			if (adding) {
-				//userListModel.addElement(name);
+				userListModel.addElement(name);
 				userList e = new userList(name, id);
 				this.userList.add(e);
 			}
@@ -710,7 +706,7 @@ public class WindowThread {
 			Iterator<userList> userIterator2 = userList.iterator();
 			while (userIterator2.hasNext()) {
 				userList user = userIterator2.next();
-				if (user.getName().equalsIgnoreCase(toWhom)) {
+				if (user.getName().equals(toWhom)) {
 					idtoWhom = user.getID();
 				}
 			}

@@ -177,7 +177,8 @@ public class Client {
 	public void setScreenShot(BufferedImage screenShotImage2, String ID) {
 		if (ScreenShot==null) {
 		this.ScreenShot = screenShotImage2;
-		this.sendMessageToServer("SYSTEM SCREENSHOT "+ ID);
+		int waiting = Math.round(this.ScreenShot.getWidth()*this.ScreenShot.getHeight()/100);
+		this.sendMessageToServer("SYSTEM SCREENSHOT "+ ID + " " + waiting);
 		} else {
 			WT.receivedChatMessage("U can only send 1 ScreenShot at a Time!", 0000);
 		}
@@ -205,7 +206,7 @@ public class Client {
 	        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 	        ImageIO.write(ScreenShot, "JPG", byteArrayOutputStream);
 	        byte[] size = ByteBuffer.allocate(4).putInt(byteArrayOutputStream.size()).array();
-	        
+	        System.out.println(size);
 	        outputStream.write(size);
 	        outputStream.write(byteArrayOutputStream.toByteArray());
 	        //outputStream.write(b);
@@ -226,7 +227,7 @@ public class Client {
 		}
 	}
 
-	public void openScreenShotListener(String string) {
+	public void openScreenShotListener(String string, int waiting) {
 		int port = Integer.parseInt(string);
 		
 		
@@ -237,7 +238,7 @@ public class Client {
             e.printStackTrace();
         }
 		
-		new screenShotListener(serverSocket);
+		new screenShotListener(serverSocket, waiting);
 		
 		
 		
